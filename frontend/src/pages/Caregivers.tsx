@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { Header } from "@/components/ui/header";
 import { Footer } from "@/components/ui/footer";
 import { FilterSidebar, FilterValues } from "@/components/caregivers/filter-sidebar";
 import { CaregiverCard } from "@/components/caregivers/caregiver-card";
 import { CaregiverProfile, UserType } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Mock data for caregivers
 const mockCaregivers: CaregiverProfile[] = [
@@ -118,6 +118,7 @@ const mockCaregivers: CaregiverProfile[] = [
 const Caregivers = () => {
   const [caregivers, setCaregivers] = useState<CaregiverProfile[]>(mockCaregivers);
   const [filteredCaregivers, setFilteredCaregivers] = useState<CaregiverProfile[]>(mockCaregivers);
+  const { isAuthenticated } = useAuth();
 
   const handleFilterChange = (filters: FilterValues) => {
     let filtered = [...mockCaregivers];
@@ -188,9 +189,9 @@ const Caregivers = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col relative">
       <Header />
-      <main className="flex-grow py-10 bg-brand-gray">
+      <main className={`flex-1 overflow-y-auto pt-[72px] relative z-0 ${isAuthenticated ? 'mb-[4rem]' : 'mb-[12rem]'}`}>
         <div className="container mx-auto px-4">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Cuidadores Disponíveis</h1>

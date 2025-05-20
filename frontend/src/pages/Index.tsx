@@ -8,9 +8,9 @@ import { CTASection } from "@/components/home/cta-section";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col relative">
       <Header />
-      <main className="flex-grow">
+      <main className="flex-1 overflow-y-auto pt-[72px] mb-[11rem] relative z-0">
         <BannerSection />
         <FeaturesSection />
         <HowItWorks />

@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  html, body {
+    @apply h-full overflow-hidden;
+  }
+
+  #root {
+    @apply h-full;
+  }
+
   :root {
     --background: 210 50% 98%;
     --foreground: 222 47% 11%;
@@ -96,6 +104,6 @@
 
 @layer components {
   .banner-section {
-    @apply bg-gradient-to-br from-brand-blue-light to-white py-20;
+    @apply bg-gradient-to-br from-brand-blue-light to-white py-20 pb-36;
   }
 }

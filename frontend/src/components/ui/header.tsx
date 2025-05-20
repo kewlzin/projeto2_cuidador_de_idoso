@@ -36,9 +36,6 @@ export function Header() {
       >
         Como Funciona
       </a>
-      <Link to="/profissionais" className="text-gray-600 hover:text-brand-primary">
-        Para Profissionais
-      </Link>
       <Link to="/contato" className="text-gray-600 hover:text-brand-primary">
         Contato
       </Link>
@@ -77,10 +74,13 @@ export function Header() {
   );
 
   return (
-    <header className="bg-white shadow-sm">
+    <header className="bg-white shadow-sm fixed top-0 left-0 right-0 z-50">
       <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link to="/" className="text-2xl font-bold text-brand-primary">
+          <Link 
+            to={isAuthenticated ? "/dashboard" : "/"} 
+            className="text-2xl font-bold text-brand-primary"
+          >
             CuidarBem
           </Link>
 
