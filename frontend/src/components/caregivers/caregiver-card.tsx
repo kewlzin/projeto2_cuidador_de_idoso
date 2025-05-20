@@ -70,10 +70,10 @@ export function CaregiverCard({ caregiver }: CaregiverCardProps) {
         </div>
         <div className="space-x-2">
           <Button variant="outline" size="sm" asChild>
-            <Link to={`/cuidadores/${caregiver.id}`}>Ver Perfil</Link>
+            <Link to={`/caregivers/${caregiver.id}`}>Ver Perfil</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link to={`/agendar/${caregiver.id}`}>Agendar</Link>
+            <Link to={`/schedule/${caregiver.id}`}>Agendar</Link>
           </Button>
         </div>
       </CardFooter>

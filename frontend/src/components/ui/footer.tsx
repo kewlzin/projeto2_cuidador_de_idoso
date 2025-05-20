@@ -27,12 +27,12 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/cuidadores" className="text-gray-600 hover:text-brand-blue">
+                <Link to="/caregivers" className="text-gray-600 hover:text-brand-blue">
                   Encontre Cuidadores
                 </Link>
               </li>
               <li>
-                <Link to="/cadastro" className="text-gray-600 hover:text-brand-blue">
+                <Link to="/register" className="text-gray-600 hover:text-brand-blue">
                   Cadastre-se
                 </Link>
               </li>
@@ -43,17 +43,17 @@ export function Footer() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Profissionais</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/profissionais" className="text-gray-600 hover:text-brand-blue">
+                <Link to="/register" className="text-gray-600 hover:text-brand-blue">
                   Para Cuidadores
                 </Link>
               </li>
               <li>
-                <Link to="/profissionais/medicos" className="text-gray-600 hover:text-brand-blue">
+                <Link to="/register" className="text-gray-600 hover:text-brand-blue">
                   Para Médicos
                 </Link>
               </li>
               <li>
-                <Link to="/profissionais/cadastro" className="text-gray-600 hover:text-brand-blue">
+                <Link to="/register" className="text-gray-600 hover:text-brand-blue">
                   Cadastre-se como profissional
                 </Link>
               </li>

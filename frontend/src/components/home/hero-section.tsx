@@ -15,12 +15,12 @@ export function HeroSection() {
               Conectamos famílias a cuidadores qualificados e médicos especialistas para oferecer o melhor atendimento domiciliar para idosos.
             </p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              <Link to="/cadastro">
+              <Link to="/register">
                 <Button size="lg" className="w-full sm:w-auto">
                   Encontrar Cuidador
                 </Button>
               </Link>
-              <Link to="/profissionais/cadastro">
+              <Link to="/register">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto">
                   Sou Profissional
                 </Button>
@@ -29,7 +29,7 @@ export function HeroSection() {
           </div>
           <div className="md:w-1/2 relative">
             <img 
-              src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+              src="src\assets\imagens\banner-principal.png" 
               alt="Cuidador e idoso" 
               className="rounded-lg shadow-xl max-w-full h-auto animate-fade-in"
             />

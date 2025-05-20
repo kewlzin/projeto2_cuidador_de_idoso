@@ -48,7 +48,7 @@ export function DashboardSummary({
         </CardHeader>
         <CardContent className="space-y-2">
           <a 
-            href="/cuidadores" 
+            href="/caregivers" 
             className="block text-sm text-brand-blue hover:underline"
           >
             Buscar Cuidadores

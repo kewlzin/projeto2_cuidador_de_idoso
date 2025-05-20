@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ export function RegisterForm() {
   const [userType, setUserType] = useState<UserType>(UserType.PATIENT);
   const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Campos específicos para paciente
   const [age, setAge] = useState("");
@@ -81,7 +82,7 @@ export function RegisterForm() {
       await userService.register(profileData);
       
       toast.success("Cadastro realizado com sucesso!");
-      // Redirecionar para login ou home após o cadastro
+      navigate("/login");
     } catch (error) {
       console.error(error);
       toast.error("Erro ao realizar cadastro. Tente novamente.");

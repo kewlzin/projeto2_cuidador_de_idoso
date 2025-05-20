@@ -14,11 +14,11 @@ export function CTASection() {
             Seja como responsável ou profissional, junte-se à nossa plataforma e faça parte desta comunidade de cuidados.
           </p>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Link to="/cadastro">
+            <Link to="/register">
               <Button size="lg" variant="secondary">Cadastrar como Responsável</Button>
             </Link>
-            <Link to="/profissionais/cadastro">
-              <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-brand-blue">
+            <Link to="/register">
+              <Button size="lg" variant="outline" className="border-white hover:bg-white hover:text-brand-blue">
                 Sou Profissional
               </Button>
             </Link>

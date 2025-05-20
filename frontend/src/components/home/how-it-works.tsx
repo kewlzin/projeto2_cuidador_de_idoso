@@ -58,7 +58,7 @@ export function HowItWorks() {
         </div>
 
         <div className="text-center">
-          <Link to="/cadastro">
+          <Link to="/register">
             <Button size="lg">Comece Agora</Button>
           </Link>
         </div>

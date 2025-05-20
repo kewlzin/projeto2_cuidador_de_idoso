@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
@@ -8,12 +8,31 @@ export function Header() {
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+  }, [isAuthenticated]);
+
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  // Links que mudam de acordo com a autenticação
+  const navigationLinks = !isAuthenticated ? (
+    <>
+      <Link to="/" className="text-gray-600 hover:text-brand-primary">
+        Início
+      </Link>
+      <Link to="/como-funciona" className="text-gray-600 hover:text-brand-primary">
+        Como Funciona
+      </Link>
+      <Link to="/profissionais" className="text-gray-600 hover:text-brand-primary">
+        Para Profissionais
+      </Link>
+      <Link to="/contato" className="text-gray-600 hover:text-brand-primary">
+        Contato
+      </Link>
+    </>
+  ) : null;
+
   const authLinks = isAuthenticated ? (
     <>
       <Link
@@ -47,70 +66,63 @@ export function Header() {
   );
 
   return (
-    <header className="w-full bg-white shadow-sm">
-      <div className="container mx-auto px-4 py-4">
+    <header className="bg-white shadow-sm">
+      <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2">
-            <span className="text-2xl font-bold text-brand-blue">CuidarBem</span>
+          <Link to="/" className="text-2xl font-bold text-brand-primary">
+            CuidarBem
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/como-funciona" className="text-gray-600 hover:text-brand-blue">
-              Como Funciona
-            </Link>
-            <Link to="/cuidadores" className="text-gray-600 hover:text-brand-blue">
-              Cuidadores
-            </Link>
-            <Link to="/profissionais" className="text-gray-600 hover:text-brand-blue">
-              Para Profissionais
-            </Link>
-            <Link to="/contato" className="text-gray-600 hover:text-brand-blue">
-              Contato
-            </Link>
-            {authLinks}
-          </nav>
+          {/* Links de navegação - visíveis apenas quando não autenticado */}
+          <div className="hidden md:flex items-center space-x-6">
+            {navigationLinks}
+          </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-gray-500"
+          {/* Links de autenticação */}
+          <div className="hidden md:flex items-center space-x-4">
+            {authLinks}
+          </div>
+
+          {/* Menu mobile */}
+          <button
+            className="md:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
               {mobileMenuOpen ? (
-                <svg /* ícone de fechar */>…</svg>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               ) : (
-                <svg /* ícone de menu */>…</svg>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               )}
-            </Button>
-          </div>
+            </svg>
+          </button>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Menu mobile expandido */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-4 py-4 border-t">
-            <div className="flex flex-col space-y-4">
-              <Link to="/como-funciona" className="px-4 py-2 text-gray-600 hover:text-brand-blue">
-                Como Funciona
-              </Link>
-              <Link to="/cuidadores" className="px-4 py-2 text-gray-600 hover:text-brand-blue">
-                Cuidadores
-              </Link>
-              <Link to="/profissionais" className="px-4 py-2 text-gray-600 hover:text-brand-blue">
-                Para Profissionais
-              </Link>
-              <Link to="/contato" className="px-4 py-2 text-gray-600 hover:text-brand-blue">
-                Contato
-              </Link>
-              <div className="flex flex-col space-y-2 px-4">
-                {authLinks}
-              </div>
+          <div className="md:hidden mt-4 space-y-4">
+            {navigationLinks}
+            <div className="pt-4 border-t">
+              {authLinks}
             </div>
           </div>
         )}
-      </div>
+      </nav>
     </header>
   );
 }
