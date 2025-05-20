@@ -1,73 +1,86 @@
-# Welcome to your Lovable project
+# CuidarBem - Frontend
 
-## Project info
+## Sobre o Projeto
+CuidarBem é uma plataforma que conecta cuidadores de idosos, profissionais de saúde e famílias, facilitando o cuidado domiciliar personalizado.
 
-**URL**: https://lovable.dev/projects/1122f2f1-896c-45b4-bf2d-c000f8903bb2
+## Tecnologias Utilizadas
+- React
+- TypeScript
+- Tailwind CSS
+- React Router
+- Axios
+- Sonner (notificações)
 
-## How can I edit this code?
+## Pré-requisitos
+- Node.js (versão 16 ou superior)
+- npm ou yarn
 
-There are several ways of editing your application.
+## Instalação
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/1122f2f1-896c-45b4-bf2d-c000f8903bb2) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+1. Clone o repositório
+```bash
+git clone [URL_DO_REPOSITÓRIO]
 ```
 
-**Edit a file directly in GitHub**
+2. Instale as dependências
+```bash
+cd frontend
+npm install
+# ou
+yarn install
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3. Configure as variáveis de ambiente
+Crie um arquivo `.env` na raiz do projeto frontend com as seguintes variáveis:
+```env
+VITE_API_URL=http://localhost:3000
+```
 
-**Use GitHub Codespaces**
+4. Inicie o projeto
+```bash
+npm run dev
+# ou
+yarn dev
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Estrutura do Projeto
+```
+frontend/
+├── src/
+│   ├── components/     # Componentes reutilizáveis
+│   ├── contexts/       # Contextos do React
+│   ├── pages/         # Páginas da aplicação
+│   ├── services/      # Serviços e APIs
+│   ├── types/         # Definições de tipos TypeScript
+│   └── utils/         # Funções utilitárias
+```
 
-## What technologies are used for this project?
+## Funcionalidades Principais
+- Autenticação de usuários (login/registro)
+- Dashboard personalizado por tipo de usuário
+- Agendamento de consultas
+- Perfil de usuário
+- Busca de profissionais
+- Sistema de notificações
 
-This project is built with:
+## Tipos de Usuários
+- Responsável por Idoso
+- Cuidador/Enfermeiro
+- Médico
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Scripts Disponíveis
+- `npm run dev` - Inicia o servidor de desenvolvimento
+- `npm run build` - Gera a build de produção
+- `npm run preview` - Visualiza a build de produção localmente
+- `npm run lint` - Executa o linter
+- `npm run test` - Executa os testes
 
-## How can I deploy this project?
+## Contribuição
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
+4. Push para a branch (`git push origin feature/nova-feature`)
+5. Abra um Pull Request
 
-Simply open [Lovable](https://lovable.dev/projects/1122f2f1-896c-45b4-bf2d-c000f8903bb2) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Licença
+Este projeto está sob a licença MIT.
