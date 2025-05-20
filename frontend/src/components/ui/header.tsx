@@ -16,14 +16,26 @@ export function Header() {
     navigate('/');
   };
 
+  const scrollToHowItWorks = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const howItWorksSection = document.getElementById('how-it-works');
+    if (howItWorksSection) {
+      howItWorksSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const navigationLinks = !isAuthenticated ? (
     <>
       <Link to="/" className="text-gray-600 hover:text-brand-primary">
         Início
       </Link>
-      <Link to="/como-funciona" className="text-gray-600 hover:text-brand-primary">
+      <a 
+        href="#how-it-works" 
+        onClick={scrollToHowItWorks}
+        className="text-gray-600 hover:text-brand-primary cursor-pointer"
+      >
         Como Funciona
-      </Link>
+      </a>
       <Link to="/profissionais" className="text-gray-600 hover:text-brand-primary">
         Para Profissionais
       </Link>
@@ -58,8 +70,7 @@ export function Header() {
       </Link>
       <Link
         to="/register"
-        className="bg-brand-primary text-white px-4 py-2 rounded-md hover:bg-brand-primary-dark"
-      >
+        className="text-gray-600 hover:text-brand-primary">
         Cadastrar
       </Link>
     </>

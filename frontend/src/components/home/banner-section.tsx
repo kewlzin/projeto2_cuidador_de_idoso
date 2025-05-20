@@ -1,10 +1,9 @@
-
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
-export function HeroSection() {
+export function BannerSection() {
   return (
-    <section className="hero-section overflow-hidden">
+    <section className="banner-section overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center">
           <div className="md:w-1/2 mb-10 md:mb-0">
@@ -38,4 +37,4 @@ export function HeroSection() {
       </div>
     </section>
   );
-}
+} 
