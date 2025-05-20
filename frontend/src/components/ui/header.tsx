@@ -36,9 +36,6 @@ export function Header() {
       >
         Como Funciona
       </a>
-      <Link to="/contato" className="text-gray-600 hover:text-brand-primary">
-        Contato
-      </Link>
     </>
   ) : null;
 
