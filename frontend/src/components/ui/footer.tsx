@@ -8,7 +8,7 @@ export function Footer() {
     <footer className="bg-white border-t border-gray-200 pb-8 fixed bottom-0 left-0 right-0 z-50">
       <div className="container mx-auto px-4">
         {!isAuthenticated && (
-          <div className="textos grid grid-cols-2 gap-8">
+          <div className="textos grid grid-cols-2 gap-8 pt-2">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">CuidarBem</h3>
               <p className="text-gray-600 mb-4">
