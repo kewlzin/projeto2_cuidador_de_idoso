@@ -10,7 +10,7 @@ const Index = () => {
   return (
     <div className="h-screen flex flex-col relative">
       <Header />
-      <main className="flex-1 overflow-y-auto pt-[72px] mb-[11rem] relative z-0">
+      <main className="flex-1 overflow-y-auto mb-[10rem] relative z-0">
         <BannerSection />
         <FeaturesSection />
         <HowItWorks />

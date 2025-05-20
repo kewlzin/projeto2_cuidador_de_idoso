@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 export function BannerSection() {
   return (
     <section className="banner-section overflow-hidden">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 mt-20">
         <div className="flex flex-col md:flex-row items-center">
           <div className="md:w-1/2 mb-10 md:mb-0">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
