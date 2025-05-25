@@ -7,6 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (token: string) => Promise<void>;
   logout: () => void;
+  cadastrarServico: (caregiverId: string, data: { title: string; description: string; hourly_rate: number; location: string; }) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,8 +61,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false);
   };
 
+  const cadastrarServico = async (caregiverId: string, data: { title: string; description: string; hourly_rate: number; location: string; }) => {
+    return api.post('/api/services/offer', {
+      caregiverId,
+      ...data,
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, cadastrarServico }}>
       {children}
     </AuthContext.Provider>
   );
