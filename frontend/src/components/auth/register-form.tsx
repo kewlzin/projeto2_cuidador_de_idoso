@@ -26,7 +26,7 @@ export function RegisterForm() {
   const navigate = useNavigate();
 
   // Campos específicos para paciente
-  const [age, setAge] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [address, setAddress] = useState("");
 
   // Campos específicos para cuidador
@@ -61,7 +61,7 @@ export function RegisterForm() {
       // Adiciona campos específicos baseado no tipo de usuário
       if (userType === UserType.PATIENT) {
         Object.assign(profileData, {
-          age: parseInt(age),
+          birth_date: birthDate,
           address,
         });
       } else if (userType === UserType.CAREGIVER) {
@@ -91,29 +91,29 @@ export function RegisterForm() {
     }
   };
 
-  const renderPatientFields = () => (
-    <>
-      <div className="space-y-2">
-        <Label htmlFor="age">Idade</Label>
-        <Input
-          id="age"
-          type="number"
-          value={age}
-          onChange={(e) => setAge(e.target.value)}
-          required
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="address">Endereço</Label>
-        <Input
-          id="address"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          required
-        />
-      </div>
-    </>
-  );
+const renderPatientFields = () => (
+  <>
+    <div className="space-y-2">
+      <Label htmlFor="birthDate">Data de Nascimento</Label>
+      <Input
+        id="birthDate"
+        type="date"
+        value={birthDate}
+        onChange={(e) => setBirthDate(e.target.value)}
+        required
+      />
+    </div>
+    <div className="space-y-2">
+      <Label htmlFor="address">Endereço</Label>
+      <Input
+        id="address"
+        value={address}
+        onChange={(e) => setAddress(e.target.value)}
+        required
+      />
+    </div>
+  </>
+);
 
   const renderCaregiverFields = () => (
     <>

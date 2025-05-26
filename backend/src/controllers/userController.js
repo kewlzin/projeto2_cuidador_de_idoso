@@ -7,22 +7,22 @@ const { createPatientProfile } = require('../models/PatientProfile');
 const User = require('../models/User');
 
 async function register(req, res) {
-  const { full_name, email, password, role, ...profileData } = req.body;
+  const { full_name, email, password, role, phone, birth_date, ...profileData } = req.body;
 
-  if (!['patient','caregiver','doctor'].includes(role)) {
+  if (!['patient', 'caregiver', 'doctor'].includes(role)) {
     return res.status(400).json({ error: 'Tipo de usuário inválido.' });
   }
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const userResult = await db.query(
-      'INSERT INTO users (name, email, password_hash, tipo) VALUES ($1, $2, $3, $4) RETURNING *',
-      [full_name, email, hashedPassword, role]
+      `INSERT INTO users (name, email, password_hash, tipo, phone, birth_date)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [full_name, email, hashedPassword, role, phone || null, birth_date || null]
     );
     const user = userResult.rows[0];
 
     if (role === 'patient') {
-      // aqui adicionamos full_name no objeto passado
       await createPatientProfile(user.id, { full_name, ...profileData });
     } else if (role === 'caregiver') {
       await createCaregiverProfile(user.id, profileData);
