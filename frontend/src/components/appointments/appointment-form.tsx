@@ -48,7 +48,7 @@ export function AppointmentForm({ caregiver, onSubmit }: AppointmentFormProps) {
     if (!validateForm()) return;
     
     onSubmit({
-      caregiverId: caregiver.id,
+      caregiverId: caregiver.id, 
       date,
       time,
       patientName,

@@ -71,29 +71,61 @@ async function login(req, res) {
   }
 }
 
+
 async function getUser(req, res) {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) {
     return res.status(400).json({ error: 'ID inválido' });
   }
-  const result = await db.query('SELECT * FROM users WHERE id = $1', [id]);
-  if (!result.rows[0]) {
-    return res.status(404).json({ error: 'Usuário não encontrado' });
+
+  try {
+    const userResult = await db.query('SELECT * FROM users WHERE id = $1', [id]);
+    const user = userResult.rows[0];
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // buscar perfil de cuidador, se existir
+    const caregiverResult = await db.query(
+      'SELECT * FROM caregiver_profiles WHERE user_id = $1',
+      [user.id]
+    );
+
+    const caregiverProfile = caregiverResult.rows[0] || null;
+
+    res.status(200).json({
+      ...user,
+      caregiverProfile,
+    });
+
+  } catch (error) {
+    console.error('Erro no getUser:', error);
+    res.status(500).json({ error: 'Erro interno no servidor' });
   }
-  res.status(200).json(result.rows[0]);
 }
 
 
 async function getCurrentUser(req, res) {
   try {
-    const userId = req.user.id;                  // já vem do authMiddleware
+    const userId = req.user.id;
+
     const result = await db.query(
-      'SELECT id, name, email, phone, tipo AS role, created_at \
-       FROM users WHERE id = $1',
+      `SELECT 
+         u.id,
+         u.name,
+         u.email,
+         u.phone,
+         u.tipo AS role,
+         u.created_at,
+         c.id AS caregiver_id 
+       FROM users u
+       LEFT JOIN caregiver_profiles c ON c.user_id = u.id
+       WHERE u.id = $1`,
       [userId]
     );
 
     const user = result.rows[0];
+
     if (!user) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
