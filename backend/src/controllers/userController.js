@@ -105,36 +105,107 @@ async function getUser(req, res) {
 }
 
 
+// async function getCurrentUser(req, res) {
+//   try {
+//     const userId = req.user.id;
+
+//     const result = await db.query(
+//       `SELECT 
+//          u.id,
+//          u.name,
+//          u.email,
+//          u.phone,
+//          u.tipo AS role,
+//          u.created_at,
+//          c.id AS caregiver_id 
+//        FROM users u
+//        LEFT JOIN caregiver_profiles c ON c.user_id = u.id
+//        WHERE u.id = $1`,
+//       [userId]
+//     );
+
+//     const user = result.rows[0];
+
+//     if (!user) {
+//       return res.status(404).json({ error: 'Usuário não encontrado' });
+//     }
+
+//     return res.json(user);
+//   } catch (err) {
+//     console.error('Erro ao buscar usuário atual:', err);
+//     return res.status(500).json({ error: 'Erro interno do servidor' });
+//   }
+// }
+
 async function getCurrentUser(req, res) {
   try {
     const userId = req.user.id;
-
-    const result = await db.query(
+    const userResult = await db.query(
       `SELECT 
          u.id,
          u.name,
          u.email,
          u.phone,
          u.tipo AS role,
-         u.created_at,
-         c.id AS caregiver_id 
+         u.created_at
        FROM users u
-       LEFT JOIN caregiver_profiles c ON c.user_id = u.id
        WHERE u.id = $1`,
       [userId]
     );
 
-    const user = result.rows[0];
+    const user = userResult.rows[0];
 
     if (!user) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
+    let profile = null;
 
-    return res.json(user);
+    if (user.role === 'caregiver') {
+      const caregiverResult = await db.query(
+        `SELECT
+           id AS caregiver_id,
+           bio,
+           experience_years,
+           certifications,
+           verified,
+           created_at
+         FROM caregiver_profiles
+         WHERE user_id = $1`,
+        [userId]
+      );
+      profile = caregiverResult.rows[0] || null;
+    }
+    else if (user.role === 'doctor') {
+      const doctorResult = await db.query(
+        `SELECT
+           id AS doctor_id,
+           crm,
+           specialty,
+           institution,
+           documents,
+           verified,
+           created_at
+         FROM doctor_profiles
+         WHERE user_id = $1`,
+        [userId]
+      );
+      profile = doctorResult.rows[0] || null;
+    }
+
+    return res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      created_at: user.created_at,
+      profile // será null para idosos
+    });
   } catch (err) {
     console.error('Erro ao buscar usuário atual:', err);
     return res.status(500).json({ error: 'Erro interno do servidor' });
   }
 }
+
 
 module.exports = { register, login, getUser, getCurrentUser };

@@ -28,3 +28,10 @@ yarn-error.log*
 # Sistema operacional
 .DS_Store
 Thumbs.db 
+
+frontend/node_modules
+backend/node_modules
+
+package-lock.json
+frontend/package-lock.json
+backend/package-lock.json

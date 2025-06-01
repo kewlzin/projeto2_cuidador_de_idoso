@@ -9,7 +9,7 @@ interface CaregiverCardProps {
   caregiver: CaregiverProfile;
 }
 
-export function CaregiverCard({ caregiver }: CaregiverCardProps) {
+export function CaregiverCard({ caregiver, offerid }: CaregiverCardProps) {
   const { user, bio, experienceYears, verified, location, specialties, hourlyRate } = caregiver;
   
   // Placeholder image - in a real app, use the user's profile image
@@ -70,10 +70,10 @@ export function CaregiverCard({ caregiver }: CaregiverCardProps) {
         </div>
         <div className="space-x-2">
           <Button variant="outline" size="sm" asChild>
-            <Link to={`/caregivers/${caregiver.id}`}>Ver Perfil</Link>
+            <Link to={`/caregivers/${caregiver.caregiver_profile_id}`}>Ver Perfil</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link to={`/schedule/${caregiver.id}`}>Agendar</Link>
+            <Link to={`/schedule/${offerid}`}>Agendar</Link>
           </Button>
         </div>
       </CardFooter>

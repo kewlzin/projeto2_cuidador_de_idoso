@@ -1,3 +1,5 @@
+// src/pages/Dashboard.tsx
+
 import { useState, useEffect } from "react";
 import { Header } from "@/components/ui/header";
 import { Footer } from "@/components/ui/footer";
@@ -23,127 +25,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
-const mockAppointments: Appointment[] = [
-  {
-    id: 1,
-    caregiverId: 1,
-    seniorId: 10,
-    date: "2025-05-10",
-    time: "09:00",
-    status: "agendado",
-    notes: "Primeira visita para avaliação",
-    caregiver: {
-      id: 1,
-      userId: 1,
-      bio: "Enfermeiro com mais de 10 anos de experiência no cuidado de idosos.",
-      experienceYears: 10,
-      certifications: ["COREN-SP 123456"],
-      verified: true,
-      createdAt: "2023-01-15T00:00:00Z",
-      user: {
-        id: 1,
-        name: "João Silva",
-        email: "joao.silva@email.com",
-        phone: "(11) 98765-4321",
-        type: UserType.CAREGIVER,
-        createdAt: "2023-01-10T00:00:00Z",
-      },
-    },
-  },
-  {
-    id: 2,
-    caregiverId: 2,
-    seniorId: 10,
-    date: "2025-05-15",
-    time: "14:00",
-    status: "agendado",
-    notes: "Acompanhamento e administração de medicamentos",
-    caregiver: {
-      id: 2,
-      userId: 2,
-      bio: "Cuidadora dedicada e paciente, com formação técnica em enfermagem.",
-      experienceYears: 5,
-      certifications: ["Técnico em Enfermagem"],
-      verified: true,
-      createdAt: "2023-02-20T00:00:00Z",
-      user: {
-        id: 2,
-        name: "Maria Oliveira",
-        email: "maria.oliveira@email.com",
-        phone: "(11) 91234-5678",
-        type: UserType.CAREGIVER,
-        createdAt: "2023-02-15T00:00:00Z",
-      },
-    },
-  },
-  {
-    id: 3,
-    caregiverId: 3,
-    seniorId: 10,
-    date: "2025-05-03",
-    time: "10:00",
-    status: "concluido",
-    notes: "Visita de rotina realizada com sucesso",
-    caregiver: {
-      id: 3,
-      userId: 3,
-      bio: "Enfermeiro especialista em reabilitação.",
-      experienceYears: 7,
-      certifications: ["COREN-SP 789012"],
-      verified: false,
-      createdAt: "2023-03-10T00:00:00Z",
-      user: {
-        id: 3,
-        name: "Pedro Santos",
-        email: "pedro.santos@email.com",
-        phone: "(11) 97890-1234",
-        type: UserType.CAREGIVER,
-        createdAt: "2023-03-05T00:00:00Z",
-      },
-    },
-  },
-  {
-    id: 4,
-    caregiverId: 4,
-    seniorId: 10,
-    date: "2025-04-28",
-    time: "15:00",
-    status: "cancelado",
-    notes: "Visita cancelada pelo responsável",
-    caregiver: {
-      id: 4,
-      userId: 4,
-      bio: "Cuidadora com experiência em home care.",
-      experienceYears: 3,
-      certifications: ["Curso de Primeiros Socorros"],
-      verified: true,
-      createdAt: "2023-04-05T00:00:00Z",
-      user: {
-        id: 4,
-        name: "Ana Costa",
-        email: "ana.costa@email.com",
-        phone: "(11) 94567-8901",
-        type: UserType.CAREGIVER,
-        createdAt: "2023-04-01T00:00:00Z",
-      },
-    },
-  },
-];
-
 const Dashboard = () => {
-  const [appointments, setAppointments] =
-    useState<Appointment[]>(mockAppointments);
-  const [selectedAppointment, setSelectedAppointment] =
-    useState<Appointment | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [showServiceForm, setShowServiceForm] = useState(false);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
+  // 1. Buscar dados do usuário logado
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await api.get("/api/users/me");
+        const response = await api.get<User>("/api/users/me");
         setUser(response.data);
       } catch (error) {
         toast.error("Erro ao carregar dados do usuário");
@@ -154,18 +48,120 @@ const Dashboard = () => {
     fetchUserData();
   }, []);
 
-  const handleCancelAppointment = (appointmentId: number) => {
-    // In a real app, this would be an API call
-    const updatedAppointments = appointments.map((appointment) =>
-      appointment.id === appointmentId
-        ? { ...appointment, status: "cancelado" as const }
-        : appointment
-    );
+  // 2. Assim que tivermos ‘user’, buscar agendamentos apropriados
+  useEffect(() => {
+    if (!user) return;
 
-    setAppointments(updatedAppointments);
+    const fetchAppointments = async () => {
+      try {
+        // Se for paciente (role === 'patient')
+        if (user.role === "patient") {
+          const res = await api.get<
+            Array<{
+              id: number;
+              date: string;
+              time: string;
+              patientName: string;
+              patientAge: number;
+              address: string;
+              notes: string | null;
+              createdAt: string;
+              caregiverUserId: number;
+              caregiverName: string;
+              caregiverEmail: string;
+              caregiverPhone: string;
+            }>
+          >("/api/appointments/patient");
+
+          const mapped = res.data.map((row) => ({
+            id: row.id,
+            caregiverId: row.caregiverUserId,
+            seniorId: user.id,
+            date: row.date,
+            time: row.time,
+            status: "agendado" as const,
+            notes: row.notes ?? undefined,
+            caregiver: {
+              id: row.caregiverUserId,
+              userId: row.caregiverUserId,
+              bio: "",
+              experienceYears: undefined,
+              certifications: [],
+              verified: false,
+              createdAt: "",
+              user: {
+                id: row.caregiverUserId,
+                name: row.caregiverName,
+                email: row.caregiverEmail,
+                phone: row.caregiverPhone,
+                type: "caregiver",
+                createdAt: "",
+              },
+            } as CaregiverProfile,
+          }));
+
+          setAppointments(mapped);
+        }
+        // Se for cuidador (role === 'caregiver')
+        else if (user.role === "caregiver") {
+          const res = await api.get<
+            Array<{
+              id: number;
+              date: string;
+              time: string;
+              patientName: string;
+              patientAge: number;
+              address: string;
+              notes: string | null;
+              createdAt: string;
+              patientUserId: number;
+              patientNameFull: string;
+              patientEmail: string;
+              patientPhone: string;
+            }>
+          >("/api/appointments/caregiver");
+
+          const mapped = res.data.map((row) => ({
+            id: row.id,
+            caregiverId: user.id,
+            seniorId: row.patientUserId,
+            date: row.date,
+            time: row.time,
+            status: "agendado" as const,
+            notes: row.notes ?? undefined,
+            senior: {
+              id: row.patientUserId,
+              name: row.patientNameFull,
+              email: row.patientEmail,
+              phone: row.patientPhone,
+              type: "patient",
+              createdAt: "",
+            } as User,
+          }));
+
+          setAppointments(mapped);
+        }
+        // Se for outro tipo (por ex. 'doctor'), vazio
+        else {
+          setAppointments([]);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar agendamentos:", error);
+        toast.error("Não foi possível carregar seus agendamentos.");
+      }
+    };
+
+    fetchAppointments();
+  }, [user]);
+
+  const handleCancelAppointment = (appointmentId: number) => {
+    const updated = appointments.map((a) =>
+      a.id === appointmentId ? { ...a, status: "cancelado" as const } : a
+    );
+    setAppointments(updated);
 
     toast.success("Agendamento cancelado com sucesso", {
-      description: "O cuidador será notificado sobre o cancelamento.",
+      description: "O outro lado foi notificado.",
     });
   };
 
@@ -174,13 +170,9 @@ const Dashboard = () => {
     setSelectedAppointment(appointment || null);
   };
 
-  // Count appointments by status
-  const scheduledAppointments = appointments.filter(
-    (a) => a.status === "agendado"
-  ).length;
-  const completedAppointments = appointments.filter(
-    (a) => a.status === "concluido"
-  ).length;
+  // Contagem por status
+  const scheduledAppointments = appointments.filter((a) => a.status === "agendado").length;
+  const completedAppointments = appointments.filter((a) => a.status === "concluido").length;
   const totalAppointments = appointments.length;
 
   return (
@@ -207,18 +199,20 @@ const Dashboard = () => {
               >
                 Meus Agendamentos
               </Button>
-              <Button
-                variant={showServiceForm ? "outline" : "ghost"}
-                size="sm"
-                onClick={() => setShowServiceForm(true)}
-              >
-                Cadastrar Serviço
-              </Button>
+              {user && user.type === UserType.CAREGIVER && (
+                <Button
+                  variant={showServiceForm ? "outline" : "ghost"}
+                  size="sm"
+                  onClick={() => setShowServiceForm(true)}
+                >
+                  Cadastrar Serviço
+                </Button>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Sidebar com perfil, informações gerais e ações rápidas */}
+            {/* Sidebar com perfil e contadores */}
             <div className="lg:col-span-1">
               <div className="space-y-6">
                 <Card>
@@ -228,22 +222,16 @@ const Dashboard = () => {
                   <CardContent>
                     <div className="flex items-center space-x-4">
                       <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-2xl font-semibold">
-                        {user?.name
-                          ?.split(" ")
+                        {user
+                          ?.name.split(" ")
                           .map((n) => n[0])
                           .join("")
                           .toUpperCase() || "..."}
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold">
-                          {user?.name || "Carregando..."}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {user?.email || "Carregando..."}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {user?.phone || "Carregando..."}
-                        </p>
+                        <h3 className="text-lg font-semibold">{user?.name || "Carregando..."}</h3>
+                        <p className="text-sm text-gray-600">{user?.email || "Carregando..."}</p>
+                        <p className="text-sm text-gray-600">{user?.phone || "Carregando..."}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -256,7 +244,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Card central: alterna entre agendamentos e cadastro de serviço */}
+            {/* Card central: agendamentos ou Cadastrar Serviço */}
             <div className="lg:col-span-2">
               {!showServiceForm ? (
                 <Card>
@@ -270,26 +258,25 @@ const Dashboard = () => {
                         <TabsTrigger value="past">Anteriores</TabsTrigger>
                         <TabsTrigger value="all">Todos</TabsTrigger>
                       </TabsList>
+
                       <TabsContent value="upcoming">
                         <AppointmentList
-                          appointments={appointments.filter(
-                            (a) => a.status === "agendado"
-                          )}
+                          appointments={appointments.filter((a) => a.status === "agendado")}
                           emptyMessage="Nenhum agendamento futuro encontrado."
                           onCancelAppointment={confirmCancelAppointment}
                         />
                       </TabsContent>
+
                       <TabsContent value="past">
                         <AppointmentList
                           appointments={appointments.filter(
-                            (a) =>
-                              a.status === "concluido" ||
-                              a.status === "cancelado"
+                            (a) => a.status === "concluido" || a.status === "cancelado"
                           )}
                           showStatus={true}
                           emptyMessage="Nenhum agendamento anterior encontrado."
                         />
                       </TabsContent>
+
                       <TabsContent value="all">
                         <AppointmentList
                           appointments={appointments}
@@ -317,6 +304,7 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+
       <Footer />
 
       <AlertDialog>
@@ -327,7 +315,8 @@ const Dashboard = () => {
               <AlertDialogTitle>Confirmar Cancelamento</AlertDialogTitle>
               <AlertDialogDescription>
                 Deseja realmente cancelar o agendamento com{" "}
-                {selectedAppointment.caregiver?.user?.name}
+                {selectedAppointment.caregiver?.user?.name ||
+                  selectedAppointment.senior?.name}{" "}
                 para o dia {selectedAppointment.date} às{" "}
                 {selectedAppointment.time}?
                 <br />
@@ -356,7 +345,7 @@ const Dashboard = () => {
   );
 };
 
-// Componente do formulário de serviço embutido
+// Componente do formulário de serviço embutido (permanece igual ao seu código existente)
 function ServiceFormDashboard({
   caregiverId,
   onSuccess,

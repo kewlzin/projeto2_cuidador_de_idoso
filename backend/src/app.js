@@ -4,6 +4,7 @@ const cors = require('cors');
 
 const userRoutes = require('./routes/userRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
+const appointmentRoutes = require('./routes/appointments');
 
 const app = express();
 
@@ -13,5 +14,6 @@ app.use(express.json());
 // Rotas
 app.use('/api/users', userRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/appointments', appointmentRoutes);
 
 module.exports = app;
