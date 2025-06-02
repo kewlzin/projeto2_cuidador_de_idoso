@@ -25,4 +25,6 @@ router.get(
   appointmentController.getAppointmentsByCaregiver
 );
 
+router.patch("/:id/cancel", authenticate, appointmentController.cancelAppointment);
+
 module.exports = router;

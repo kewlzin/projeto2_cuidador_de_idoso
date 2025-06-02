@@ -47,6 +47,18 @@ async function createAppointment(data) {
   return result.rows[0];
 }
 
+async function cancelAppointmentById(appointmentId) {
+    const result = await db.query(
+      `UPDATE appointments
+         SET status = 'cancelado'
+       WHERE id = $1
+       RETURNING *`,
+      [appointmentId]
+    );
+    return result.rows[0];
+  }
+
 module.exports = {
   createAppointment,
+  cancelAppointmentById,
 };

@@ -1,7 +1,6 @@
+// src/components/dashboard/appointment-list.tsx
 
 import React from "react";
-import { format, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Appointment } from "@/types";
 import { AppointmentCard } from "@/components/appointments/appointment-card";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,17 +8,19 @@ import { Card, CardContent } from "@/components/ui/card";
 interface AppointmentListProps {
   appointments: Appointment[];
   showStatus?: boolean;
+  showPatientName?: boolean;          // adicionada
   emptyMessage?: string;
   onCancelAppointment?: (appointmentId: number) => void;
 }
 
-export function AppointmentList({ 
-  appointments, 
+export function AppointmentList({
+  appointments,
   showStatus = false,
+  showPatientName = false,           // adicionada
   emptyMessage = "Nenhum agendamento encontrado.",
-  onCancelAppointment
+  onCancelAppointment,
 }: AppointmentListProps) {
-  // Sort appointments by date (most recent first)
+  // Ordena por data (mais recente primeiro)
   const sortedAppointments = [...appointments].sort((a, b) => {
     const dateA = new Date(`${a.date}T${a.time}`);
     const dateB = new Date(`${b.date}T${b.time}`);
@@ -39,13 +40,14 @@ export function AppointmentList({
   return (
     <div className="space-y-4">
       {sortedAppointments.map((appointment) => (
-        <AppointmentCard 
-          key={appointment.id} 
+        <AppointmentCard
+          key={appointment.id}
           appointment={appointment}
           showStatus={showStatus}
+          showPatientName={showPatientName}          // repassa para o Card
           onCancel={
-            appointment.status === "agendado" && onCancelAppointment 
-              ? () => onCancelAppointment(appointment.id) 
+            appointment.status === "agendado" && onCancelAppointment
+              ? () => onCancelAppointment(appointment.id)
               : undefined
           }
         />

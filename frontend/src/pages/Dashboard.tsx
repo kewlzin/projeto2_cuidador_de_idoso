@@ -154,15 +154,20 @@ const Dashboard = () => {
     fetchAppointments();
   }, [user]);
 
-  const handleCancelAppointment = (appointmentId: number) => {
-    const updated = appointments.map((a) =>
-      a.id === appointmentId ? { ...a, status: "cancelado" as const } : a
-    );
-    setAppointments(updated);
-
-    toast.success("Agendamento cancelado com sucesso", {
-      description: "O outro lado foi notificado.",
-    });
+  const handleCancelAppointment = async (appointmentId: number) => {
+    try{
+      await api.patch(`/api/appointments/${appointmentId}/cancel`);
+      const updated = appointments.map((a) =>
+        a.id === appointmentId ? { ...a, status: "cancelado" as const } : a
+      );
+      setAppointments(updated);
+      toast.success("Agendamento cancelado com sucesso", {
+        description: "O outro lado foi notificado.",
+      });
+    } catch(err: any){
+      toast.error("Erro ao cancelar agendamento");
+      console.error("Erro ao cancelar agendamento:", err);
+    }
   };
 
   const confirmCancelAppointment = (appointmentId: number) => {
@@ -263,7 +268,8 @@ const Dashboard = () => {
                         <AppointmentList
                           appointments={appointments.filter((a) => a.status === "agendado")}
                           emptyMessage="Nenhum agendamento futuro encontrado."
-                          onCancelAppointment={confirmCancelAppointment}
+                          onCancelAppointment={handleCancelAppointment}
+                          showPatientName={user?.role === "caregiver"}
                         />
                       </TabsContent>
 
@@ -273,6 +279,7 @@ const Dashboard = () => {
                             (a) => a.status === "concluido" || a.status === "cancelado"
                           )}
                           showStatus={true}
+                          showPatientName={user?.role === "caregiver"}
                           emptyMessage="Nenhum agendamento anterior encontrado."
                         />
                       </TabsContent>
@@ -281,7 +288,8 @@ const Dashboard = () => {
                         <AppointmentList
                           appointments={appointments}
                           showStatus={true}
-                          onCancelAppointment={confirmCancelAppointment}
+                          onCancelAppointment={handleCancelAppointment}
+                          showPatientName={user?.role === "caregiver"}
                         />
                       </TabsContent>
                     </Tabs>

@@ -25,15 +25,17 @@ import {
 interface AppointmentCardProps {
   appointment: Appointment;
   showStatus?: boolean;
+  showPatientName?: boolean;
   onCancel?: () => void;
 }
 
 export function AppointmentCard({ 
   appointment, 
   showStatus = false,
+  showPatientName = false,
   onCancel 
 }: AppointmentCardProps) {
-  const { caregiver, date, time, status, notes } = appointment;
+  const { caregiver, senior, date, time, status, notes } = appointment;
   
   const formattedDate = date ? format(parseISO(date), "PPP", { locale: ptBR }) : "";
   
@@ -55,7 +57,7 @@ export function AppointmentCard({
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between pb-2">
         <div>
           <div className="flex items-center gap-2">
-            <CardTitle className="text-lg">{caregiver?.user?.name}</CardTitle>
+            <CardTitle className="text-lg">{showPatientName ? senior?.name : caregiver?.user?.name}</CardTitle>
             {showStatus && getStatusBadge()}
           </div>
           <CardDescription className="text-sm">

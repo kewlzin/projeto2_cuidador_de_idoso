@@ -102,6 +102,7 @@ async function getAppointmentsByPatient(req, res) {
        JOIN caregiver_profiles cp ON cp.id = a.caregiver_id
        JOIN users u ON u.id = cp.user_id
        WHERE a.patient_id = $1
+       AND a.status <> 'cancelado'
        ORDER BY a.date, a.time`,
       [patientId]
     );
@@ -152,6 +153,7 @@ async function getAppointmentsByCaregiver(req, res) {
        FROM appointments a
        JOIN users u ON u.id = a.patient_id
        WHERE a.caregiver_id = $1
+       AND a.status <> 'cancelado'
        ORDER BY a.date, a.time`,
       [caregiverProfileId]
     );
@@ -166,9 +168,50 @@ async function getAppointmentsByCaregiver(req, res) {
 }
 
 
+async function cancelAppointment(req, res) {
+  try {
+    const appointmentId = Number(req.params.id);
+    const userId = req.user.id;
+
+    const result = await db.query(
+      `SELECT patient_id, caregiver_id, status 
+         FROM appointments
+        WHERE id = $1`,
+      [appointmentId]
+    );
+    const row = result.rows[0];
+    if (!row) {
+      return res.status(404).json({ error: "Agendamento não encontrado." });
+    }
+
+    const isPatient = row.patient_id === userId;
+    const isCaregiver = row.caregiver_id === userId;
+    if (!isPatient && !isCaregiver) {
+      return res
+        .status(403)
+        .json({ error: "Você não pode cancelar este agendamento." });
+    }
+
+    if (row.status === "cancelado") {
+      return res
+        .status(400)
+        .json({ error: "Este agendamento já está cancelado." });
+    }
+
+    const updated = await Appointment.cancelAppointmentById(appointmentId);
+    return res.json(updated);
+  } catch (err) {
+    console.error("Erro em cancelAppointment:", err);
+    return res
+      .status(500)
+      .json({ error: "Erro interno ao cancelar agendamento." });
+  }
+}
+
 
 module.exports = {
   createAppointment,
   getAppointmentsByPatient,
   getAppointmentsByCaregiver,
+  cancelAppointment,
 };
