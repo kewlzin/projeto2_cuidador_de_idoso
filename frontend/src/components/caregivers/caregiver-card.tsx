@@ -9,8 +9,8 @@ interface CaregiverCardProps {
   caregiver: CaregiverProfile;
 }
 
-export function CaregiverCard({ caregiver, offerid }: CaregiverCardProps) {
-  const { user, bio, experienceYears, verified, location, specialties, hourlyRate } = caregiver;
+export function CaregiverCard({ caregiver, offerid, offerTitle }: CaregiverCardProps) {
+  const { user, bio, experience_years, verified, location, specialties, hourlyRate } = caregiver;
   
   // Placeholder image - in a real app, use the user's profile image
   const profileImage = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=256&q=80";
@@ -25,15 +25,16 @@ export function CaregiverCard({ caregiver, offerid }: CaregiverCardProps) {
         />
         <div className="space-y-1 text-center md:text-left">
           <CardTitle className="text-xl">
-            {user?.name || "Nome do Cuidador"}
+            {offerTitle || "Titulo do serviço"}
             {verified && (
               <Badge className="ml-2 bg-green-500" variant="secondary">Verificado</Badge>
             )}
           </CardTitle>
           <CardDescription>
-            {experienceYears && (
-              <span className="block">{experienceYears} {experienceYears === 1 ? 'ano' : 'anos'} de experiência</span>
+            {experience_years && (
+              <span className="block">{experience_years} {experience_years === 1 ? 'ano' : 'anos'} de experiência</span>
             )}
+            <span className="block font-medium">{user?.name}</span>
             <span className="block">{location || "Localização não especificada"}</span>
           </CardDescription>
         </div>

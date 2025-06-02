@@ -122,6 +122,7 @@ const Offers = () => {
                       key={offer.id}
                       caregiver={profileParaCard}
                       offerid={offer.offer_id}
+                      offerTitle={offer.title}
                     />
                   );
                 })}
