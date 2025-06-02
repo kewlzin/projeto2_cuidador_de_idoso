@@ -204,7 +204,7 @@ const Dashboard = () => {
               >
                 Meus Agendamentos
               </Button>
-              {user && user.type === UserType.CAREGIVER && (
+              {user && user.role === 'caregiver' && (
                 <Button
                   variant={showServiceForm ? "outline" : "ghost"}
                   size="sm"
