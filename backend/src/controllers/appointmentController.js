@@ -174,9 +174,14 @@ async function cancelAppointment(req, res) {
     const userId = req.user.id;
 
     const result = await db.query(
-      `SELECT patient_id, caregiver_id, status 
-         FROM appointments
-        WHERE id = $1`,
+      `SELECT
+         a.patient_id,
+         cp.user_id       AS caregiver_user_id,
+         a.status
+       FROM appointments a
+       JOIN caregiver_profiles cp
+         ON cp.id = a.caregiver_id
+       WHERE a.id = $1`,
       [appointmentId]
     );
     const row = result.rows[0];
@@ -185,7 +190,7 @@ async function cancelAppointment(req, res) {
     }
 
     const isPatient = row.patient_id === userId;
-    const isCaregiver = row.caregiver_id === userId;
+    const isCaregiver = row.caregiver_user_id === userId;
     if (!isPatient && !isCaregiver) {
       return res
         .status(403)
@@ -207,7 +212,6 @@ async function cancelAppointment(req, res) {
       .json({ error: "Erro interno ao cancelar agendamento." });
   }
 }
-
 
 module.exports = {
   createAppointment,
