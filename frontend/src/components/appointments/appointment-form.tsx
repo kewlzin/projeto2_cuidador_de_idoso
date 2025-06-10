@@ -1,28 +1,35 @@
+// src/components/appointments/appointment-form.tsx
 
 import React, { useState } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Calendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
+// Imports relacionados à data e hora foram removidos
+// import { format } from "date-fns";
+// import { ptBR } from "date-fns/locale";
+// import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CaregiverProfile } from "@/types";
+// import { CaregiverProfile } from "@/types"; // Não é mais necessário aqui
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button"; // Mantenha o import do Button para o submit
 
-interface AppointmentFormProps {
-  caregiver: CaregiverProfile;
-  onSubmit: (data: any) => void;
+// Definindo a interface para os dados que o formulário irá submeter
+interface AppointmentFormFields {
+  patientName: string;
+  patientAge: string;
+  address: string;
+  notes: string;
 }
 
-// Mock data for available time slots
-const availableTimeSlots = [
-  "08:00", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"
-];
+interface AppointmentFormProps {
+  // A prop 'caregiver' não é mais necessária, o id do cuidador e o horário
+  // virão da ServiceOffer na página pai (ScheduleAppointment.tsx)
+  onSubmit: (data: AppointmentFormFields) => void; // Tipagem mais específica
+}
 
-export function AppointmentForm({ caregiver, onSubmit }: AppointmentFormProps) {
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [time, setTime] = useState<string>("");
+export function AppointmentForm({ onSubmit }: AppointmentFormProps) { // Remove 'caregiver' das props
+  // Removemos os estados de data e hora
+  // const [date, setDate] = useState<Date | undefined>(undefined);
+  // const [time, setTime] = useState<string>("");
   const [patientName, setPatientName] = useState<string>("");
   const [patientAge, setPatientAge] = useState<string>("");
   const [address, setAddress] = useState<string>("");
@@ -32,8 +39,7 @@ export function AppointmentForm({ caregiver, onSubmit }: AppointmentFormProps) {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!date) newErrors.date = "A data é obrigatória";
-    if (!time) newErrors.time = "O horário é obrigatório";
+    // As validações de data e hora foram removidas
     if (!patientName) newErrors.patientName = "O nome do paciente é obrigatório";
     if (!patientAge) newErrors.patientAge = "A idade do paciente é obrigatória";
     if (!address) newErrors.address = "O endereço é obrigatório";
@@ -47,10 +53,9 @@ export function AppointmentForm({ caregiver, onSubmit }: AppointmentFormProps) {
     
     if (!validateForm()) return;
     
+    // onSubmit agora recebe apenas os dados do paciente.
+    // caregiverId, date e time são tratados na página pai (ScheduleAppointment.tsx)
     onSubmit({
-      caregiverId: caregiver.id, 
-      date,
-      time,
       patientName,
       patientAge,
       address,
@@ -62,6 +67,8 @@ export function AppointmentForm({ caregiver, onSubmit }: AppointmentFormProps) {
     <Card className="bg-white shadow">
       <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* REMOVIDO: Bloco de seleção de data e horário */}
+          {/*
           <div>
             <h3 className="text-lg font-medium mb-4">Selecione a data e horário</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -74,7 +81,6 @@ export function AppointmentForm({ caregiver, onSubmit }: AppointmentFormProps) {
                     onSelect={setDate}
                     locale={ptBR}
                     disabled={(date) => {
-                      // Disable past dates and dates more than 30 days in the future
                       const today = new Date();
                       today.setHours(0, 0, 0, 0);
                       const thirtyDaysFromNow = new Date();
@@ -91,23 +97,24 @@ export function AppointmentForm({ caregiver, onSubmit }: AppointmentFormProps) {
                 <Label htmlFor="time">Horário da Visita</Label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {availableTimeSlots.map((slot) => (
-                    <Button
-                      key={slot}
-                      type="button"
-                      variant={time === slot ? "default" : "outline"}
-                      onClick={() => setTime(slot)}
-                      className="w-full"
-                    >
-                      {slot}
-                    </Button>
-                  ))}
+                        <Button
+                          key={slot}
+                          type="button"
+                          variant={time === slot ? "default" : "outline"}
+                          onClick={() => setTime(slot)}
+                          className="w-full"
+                        >
+                          {slot}
+                        </Button>
+                      ))}
                 </div>
                 {errors.time && <p className="text-sm text-red-500">{errors.time}</p>}
               </div>
             </div>
           </div>
+          */}
 
-          <div className="pt-4 border-t">
+          <div className="pt-4 border-t"> {/* Mantive o border-t, pode ajustar o estilo se quiser */}
             <h3 className="text-lg font-medium mb-4">Informações do Paciente</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -116,6 +123,7 @@ export function AppointmentForm({ caregiver, onSubmit }: AppointmentFormProps) {
                   id="patientName"
                   value={patientName}
                   onChange={(e) => setPatientName(e.target.value)}
+                  required // Adicionar required para garantir que o campo não esteja vazio
                 />
                 {errors.patientName && <p className="text-sm text-red-500">{errors.patientName}</p>}
               </div>
@@ -129,6 +137,7 @@ export function AppointmentForm({ caregiver, onSubmit }: AppointmentFormProps) {
                   max="120"
                   value={patientAge}
                   onChange={(e) => setPatientAge(e.target.value)}
+                  required // Adicionar required
                 />
                 {errors.patientAge && <p className="text-sm text-red-500">{errors.patientAge}</p>}
               </div>
@@ -141,6 +150,7 @@ export function AppointmentForm({ caregiver, onSubmit }: AppointmentFormProps) {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Rua, número, complemento, bairro, cidade"
+                required // Adicionar required
               />
               {errors.address && <p className="text-sm text-red-500">{errors.address}</p>}
             </div>

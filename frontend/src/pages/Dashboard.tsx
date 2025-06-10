@@ -18,12 +18,26 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Appointment, CaregiverProfile, UserType, User } from "@/types";
+import { Appointment, UserType, User } from "@/types"; // Importe UserType
 import { toast } from "sonner";
 import { api } from "../lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { AxiosError } from "axios"; // Import AxiosError para tipagem de erro
+
+// Função auxiliar para mapear a string de 'role' do backend para o enum UserType
+const mapBackendRoleToUserType = (backendRole: string): UserType => {
+  switch (backendRole) {
+    case 'patient': return UserType.SENIOR;
+    case 'caregiver': return UserType.CAREGIVER;
+    case 'doctor': return UserType.DOCTOR;
+    default: 
+      // Caso um tipo desconhecido venha do backend, trate como um valor padrão
+      console.warn(`Tipo de usuário desconhecido do backend: ${backendRole}. Retornando como SENIOR.`);
+      return UserType.SENIOR; 
+  }
+};
 
 const Dashboard = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -33,129 +47,75 @@ const Dashboard = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // 1. Buscar dados do usuário logado
+  // 1. Buscar dados do usuário logado e mapear o tipo
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await api.get<User>("/api/users/me");
-        setUser(response.data);
-      } catch (error) {
-        toast.error("Erro ao carregar dados do usuário");
+   
+        const response = await api.get<any>("/api/users/me"); 
+        
+
+        const fetchedUser: User = {
+            ...response.data, 
+            role: mapBackendRoleToUserType(response.data.role) 
+        };
+        setUser(fetchedUser);
+
+
+        console.log("Usuário carregado no Dashboard (depois do mapeamento):", fetchedUser);
+        console.log("Role do usuário carregado (depois do mapeamento):", fetchedUser.role);
+
+      } catch (error: unknown) { 
         console.error("Erro ao buscar dados do usuário:", error);
+        if (error instanceof AxiosError && error.response?.data?.error) {
+            toast.error(error.response.data.error);
+        } else {
+            toast.error("Erro ao carregar dados do usuário.");
+        }
       }
     };
 
     fetchUserData();
-  }, []);
+  }, []); 
 
-  // 2. Assim que tivermos ‘user’, buscar agendamentos apropriados
   useEffect(() => {
-    if (!user) return;
+    if (!user) return; 
 
-    const fetchAppointments = async () => {
+const fetchAppointments = async () => {
       try {
-        // Se for paciente (role === 'patient')
-        if (user.role === "patient") {
-          const res = await api.get<
-            Array<{
-              id: number;
-              date: string;
-              time: string;
-              patientName: string;
-              patientAge: number;
-              address: string;
-              notes: string | null;
-              createdAt: string;
-              caregiverUserId: number;
-              caregiverName: string;
-              caregiverEmail: string;
-              caregiverPhone: string;
-            }>
-          >("/api/appointments/patient");
+        let res;
+        if (user.role === UserType.SENIOR) {
 
-          const mapped = res.data.map((row) => ({
-            id: row.id,
-            caregiverId: row.caregiverUserId,
-            seniorId: user.id,
-            date: row.date,
-            time: row.time,
-            status: "agendado" as const,
-            notes: row.notes ?? undefined,
-            caregiver: {
-              id: row.caregiverUserId,
-              userId: row.caregiverUserId,
-              bio: "",
-              experienceYears: undefined,
-              certifications: [],
-              verified: false,
-              createdAt: "",
-              user: {
-                id: row.caregiverUserId,
-                name: row.caregiverName,
-                email: row.caregiverEmail,
-                phone: row.caregiverPhone,
-                type: "caregiver",
-                createdAt: "",
-              },
-            } as CaregiverProfile,
-          }));
+          res = await api.get<any[]>("/api/appointments/patient");
+        } else if (user.role === UserType.CAREGIVER) {
 
-          setAppointments(mapped);
-        }
-        // Se for cuidador (role === 'caregiver')
-        else if (user.role === "caregiver") {
-          const res = await api.get<
-            Array<{
-              id: number;
-              date: string;
-              time: string;
-              patientName: string;
-              patientAge: number;
-              address: string;
-              notes: string | null;
-              createdAt: string;
-              patientUserId: number;
-              patientNameFull: string;
-              patientEmail: string;
-              patientPhone: string;
-            }>
-          >("/api/appointments/caregiver");
-
-          const mapped = res.data.map((row) => ({
-            id: row.id,
-            caregiverId: user.id,
-            seniorId: row.patientUserId,
-            date: row.date,
-            time: row.time,
-            status: "agendado" as const,
-            notes: row.notes ?? undefined,
-            senior: {
-              id: row.patientUserId,
-              name: row.patientNameFull,
-              email: row.patientEmail,
-              phone: row.patientPhone,
-              type: "patient",
-              createdAt: "",
-            } as User,
-          }));
-
-          setAppointments(mapped);
-        }
-        // Se for outro tipo (por ex. 'doctor'), vazio
-        else {
+          res = await api.get<any[]>("/api/appointments/caregiver");
+        } else {
           setAppointments([]);
+          return;
         }
-      } catch (error) {
+
+
+        const mappedAppointments: Appointment[] = res.data.map((appt: any) => ({
+          ...appt, 
+          serviceHourlyRate: appt.serviceHourlyRate ? Number(appt.serviceHourlyRate) : undefined,
+        }));
+
+        setAppointments(mappedAppointments); 
+        console.log("Agendamentos carregados na Dashboard (APÓS MAPEAMENTO):", mappedAppointments); 
+
+      } catch (error: unknown) { 
         console.error("Erro ao buscar agendamentos:", error);
         toast.error("Não foi possível carregar seus agendamentos.");
       }
     };
 
+
     fetchAppointments();
   }, [user]);
 
   const handleCancelAppointment = async (appointmentId: number) => {
-    try{
+    try {
       await api.patch(`/api/appointments/${appointmentId}/cancel`);
       const updated = appointments.map((a) =>
         a.id === appointmentId ? { ...a, status: "cancelado" as const } : a
@@ -164,9 +124,13 @@ const Dashboard = () => {
       toast.success("Agendamento cancelado com sucesso", {
         description: "O outro lado foi notificado.",
       });
-    } catch(err: any){
-      toast.error("Erro ao cancelar agendamento");
+    } catch (err: unknown) { // Tratamento de erro robusto
       console.error("Erro ao cancelar agendamento:", err);
+      if (err instanceof AxiosError && err.response?.data?.error) {
+        toast.error(err.response.data.error);
+      } else {
+        toast.error("Erro ao cancelar agendamento.");
+      }
     }
   };
 
@@ -204,7 +168,7 @@ const Dashboard = () => {
               >
                 Meus Agendamentos
               </Button>
-              {user && user.role === 'caregiver' && (
+              {user && user.role === UserType.CAREGIVER && ( // Condição agora usa user.role, que virá do mapeamento
                 <Button
                   variant={showServiceForm ? "outline" : "ghost"}
                   size="sm"
@@ -269,7 +233,7 @@ const Dashboard = () => {
                           appointments={appointments.filter((a) => a.status === "agendado")}
                           emptyMessage="Nenhum agendamento futuro encontrado."
                           onCancelAppointment={handleCancelAppointment}
-                          showPatientName={user?.role === "caregiver"}
+                          showPatientName={user?.role === UserType.CAREGIVER} // Usa user.role
                         />
                       </TabsContent>
 
@@ -279,7 +243,7 @@ const Dashboard = () => {
                             (a) => a.status === "concluido" || a.status === "cancelado"
                           )}
                           showStatus={true}
-                          showPatientName={user?.role === "caregiver"}
+                          showPatientName={user?.role === UserType.CAREGIVER} // Usa user.role
                           emptyMessage="Nenhum agendamento anterior encontrado."
                         />
                       </TabsContent>
@@ -289,7 +253,7 @@ const Dashboard = () => {
                           appointments={appointments}
                           showStatus={true}
                           onCancelAppointment={handleCancelAppointment}
-                          showPatientName={user?.role === "caregiver"}
+                          showPatientName={user?.role === UserType.CAREGIVER} // Usa user.role
                         />
                       </TabsContent>
                     </Tabs>
@@ -301,6 +265,7 @@ const Dashboard = () => {
                     <CardTitle>Cadastrar Serviço</CardTitle>
                   </CardHeader>
                   <CardContent>
+                    {/* Componente do formulário de serviço embutido */}
                     <ServiceFormDashboard
                       caregiverId={user?.id}
                       onSuccess={() => setShowServiceForm(false)}
@@ -324,7 +289,7 @@ const Dashboard = () => {
               <AlertDialogDescription>
                 Deseja realmente cancelar o agendamento com{" "}
                 {selectedAppointment.caregiver?.user?.name ||
-                  selectedAppointment.senior?.name}{" "}
+                  selectedAppointment.patientName}{" "}
                 para o dia {selectedAppointment.date} às{" "}
                 {selectedAppointment.time}?
                 <br />
@@ -353,7 +318,7 @@ const Dashboard = () => {
   );
 };
 
-// Componente do formulário de serviço embutido (permanece igual ao seu código existente)
+// Componente ServiceFormDashboard (também faz parte do Dashboard.tsx)
 function ServiceFormDashboard({
   caregiverId,
   onSuccess,
@@ -365,27 +330,46 @@ function ServiceFormDashboard({
   const [description, setDescription] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
   const [location, setLocation] = useState("");
+  const [availableAt, setAvailableAt] = useState(""); // Estado para data/hora
   const [loading, setLoading] = useState(false);
 
   const { cadastrarServico } = useAuth();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // --- LOG PARA DEPURAR O VALOR DE availableAt ANTES DE ENVIAR ---
+    console.log("Valor de availableAt antes de enviar:", availableAt);
+    // --- FIM DO LOG ---
+
     try {
+      if (!availableAt) { // Validação adicional no frontend
+        toast.error("Por favor, selecione a data e hora de disponibilidade.");
+        setLoading(false);
+        return;
+      }
+
       await cadastrarServico(String(caregiverId), {
         title,
         description,
         hourly_rate: Number(hourlyRate),
         location,
+        availableAt: availableAt, // Envia a string diretamente do input
       });
       toast.success("Serviço cadastrado com sucesso!");
       setTitle("");
       setDescription("");
       setHourlyRate("");
       setLocation("");
+      setAvailableAt(""); // Limpa o campo de data/hora
       onSuccess();
-    } catch (error) {
-      toast.error("Erro ao cadastrar serviço. Tente novamente.");
+    } catch (error: unknown) {
+      console.error("Erro ao cadastrar serviço:", error);
+      if (error instanceof AxiosError && error.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else {
+        toast.error("Erro ao cadastrar serviço. Tente novamente.");
+      }
     } finally {
       setLoading(false);
     }
@@ -445,6 +429,19 @@ function ServiceFormDashboard({
           onChange={(e) => setLocation(e.target.value)}
           required
           placeholder="Ex: São Paulo, SP"
+        />
+      </div>
+      {/* NOVO CAMPO: Data e Hora de Disponibilidade */}
+      <div>
+        <label className="block text-gray-700 font-medium mb-2">
+          Data e Hora de Disponibilidade
+        </label>
+        <input
+          type="datetime-local"
+          className="w-full border border-gray-300 rounded px-3 py-2"
+          value={availableAt}
+          onChange={(e) => setAvailableAt(e.target.value)}
+          required
         />
       </div>
       <div className="pt-4 flex justify-end">

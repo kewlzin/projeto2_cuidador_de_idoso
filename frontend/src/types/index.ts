@@ -10,7 +10,7 @@ export interface User {
   email: string;
   phone?: string;
   birthDate?: string;
-  type: UserType;
+  role: UserType;
   createdAt: string;
 }
 
@@ -23,10 +23,7 @@ export interface CaregiverProfile {
   verified: boolean;
   createdAt: string;
   user?: User;
-  hourlyRate?: number;
-  location?: string;
   specialties?: string[];
-  availability?: string[];
 }
 
 export interface DoctorProfile {
@@ -50,7 +47,8 @@ export interface ServiceOffer {
   location?: string;
   active: boolean;
   createdAt: string;
-  caregiver?: CaregiverProfile;
+  availableAt: string; // <--- ADICIONADO: Data e hora de disponibilidade da oferta (formato ISO string)
+  caregiver?: CaregiverProfile; // Cuidador associado à oferta
 }
 
 export interface ServiceRequest {
@@ -86,11 +84,26 @@ export interface MedicalNote {
 export interface Appointment {
   id: number;
   caregiverId: number;
-  seniorId: number;
-  date: string;
-  time: string;
+  seniorId: number; // user.id do paciente/responsável
+  patientName: string; // Nome do idoso/paciente no agendamento
+  patientAge: number;  // Idade do idoso/paciente no agendamento
+  address: string;     // Endereço do agendamento
+
+  date: string; // Data do agendamento (YYYY-MM-DD)
+  time: string; // Hora do agendamento (HH:mm)
   status: 'agendado' | 'concluido' | 'cancelado';
   notes?: string;
-  caregiver?: CaregiverProfile;
-  senior?: User;
+  createdAt?: string;
+
+  serviceOfferId?: number; // <--- NOVO: ID da oferta de serviço que gerou o agendamento
+
+  // Campos da ServiceOffer quando JOIN for feito nas queries de listagem do backend:
+  serviceTitle?: string;
+  serviceDescription?: string;
+  serviceHourlyRate?: number;
+  serviceLocation?: string;
+  serviceAvailableAt?: string; // <--- NOVO: Data e hora original da oferta de serviço
+
+  caregiver?: CaregiverProfile; // Perfil do cuidador
+  senior?: User; // Perfil do usuário paciente/responsável
 }

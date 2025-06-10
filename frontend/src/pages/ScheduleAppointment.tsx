@@ -11,46 +11,51 @@ import { CaregiverProfile, ServiceOffer } from "@/types";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "../lib/api";
+import { AxiosError } from 'axios'; // Import para tipagem de erro
 
 const ScheduleAppointment = () => {
-  // Agora useParams vai ler da rota '/schedule/:offerId'
   const { offerId } = useParams<{ offerId: string }>();
   const navigate = useNavigate();
   const [caregiver, setCaregiver] = useState<CaregiverProfile | null>(null);
-  const [hourlyRate, setHourlyRate] = useState<number | null>(null);
+  const [serviceOffer, setServiceOffer] = useState<ServiceOffer | null>(null); // <--- NOVO: Armazena a oferta completa
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    // Se offerId for undefined, abortamos e mostramos “não encontrado”
     if (!offerId) {
       setIsLoading(false);
+      toast.error("ID da oferta de serviço não fornecido.");
       return;
     }
 
     const fetchOffer = async () => {
       try {
-        // Como baseURL = 'http://localhost:3001', chame exatamente '/api/services/offers/:id'
         const response = await api.get<ServiceOffer>(`/api/services/offers/${offerId}`);
-        console.log("Resposta da oferta:", response.data);
-        const serviceOffer = response.data;
+        const fetchedServiceOffer = response.data;
 
-        if (!serviceOffer.caregiver) {
-          toast.error("Cuidador não encontrado.");
+        if (!fetchedServiceOffer.caregiver) {
+          toast.error("Cuidador não encontrado para esta oferta.");
           setCaregiver(null);
-          setHourlyRate(null);
+          setServiceOffer(null);
         } else {
-          setCaregiver(serviceOffer.caregiver);
-          setHourlyRate(serviceOffer.hourlyRate ?? null);
+          setCaregiver(fetchedServiceOffer.caregiver);
+          setServiceOffer(fetchedServiceOffer); // <--- Guarda a oferta completa
         }
-      } catch (err: any) {
-        if (err.response?.status === 404) {
-          toast.error("Cuidador não encontrado.");
-        } else {
-          toast.error("Falha ao carregar dados do cuidador. Tente novamente.");
-        }
-        setCaregiver(null);
-        setHourlyRate(null);
+      } catch (err: unknown) { // Use 'unknown' para tipagem de erro
+          if (err instanceof AxiosError && err.response) {
+              if (err.response.status === 404) {
+                  toast.error("Oferta de serviço não encontrada ou já expirou.");
+              } else if (err.response.data?.error) {
+                  toast.error(err.response.data.error);
+              } else {
+                  toast.error("Falha ao carregar dados da oferta de serviço. Tente novamente.");
+              }
+          } else {
+              console.error("Erro inesperado ao carregar oferta:", err);
+              toast.error("Ocorreu um erro inesperado. Tente novamente.");
+          }
+          setCaregiver(null);
+          setServiceOffer(null);
       } finally {
         setIsLoading(false);
       }
@@ -59,56 +64,60 @@ const ScheduleAppointment = () => {
     fetchOffer();
   }, [offerId]);
 
-  const handleAppointmentSubmit = async (appointmentData: {
-    caregiverId: number;
-    date: Date;
-    time: string;
+  // handleAppointmentSubmit agora espera apenas os dados do paciente
+  const handleAppointmentSubmit = async (appointmentFormFields: {
     patientName: string;
     patientAge: string;
     address: string;
     notes: string;
   }) => {
-    try {
-      const formattedDate = appointmentData.date.toISOString().split("T")[0];
+    if (!serviceOffer || !serviceOffer.caregiver) {
+      toast.error("Não foi possível agendar: oferta ou cuidador inválido.");
+      return;
+    }
 
+    try {
       await api.post("/api/appointments", {
-        caregiverId: appointmentData.caregiverId,
-        date: formattedDate,
-        time: appointmentData.time,
-        patientName: appointmentData.patientName.trim(),
-        patientAge: Number(appointmentData.patientAge),
-        address: appointmentData.address.trim(),
-        notes: appointmentData.notes.trim() || null,
+        serviceOfferId: Number(offerId), // <--- Envia o ID da oferta (o backend pegará data/time dela)
+        patientName: appointmentFormFields.patientName.trim(),
+        patientAge: Number(appointmentFormFields.patientAge),
+        address: appointmentFormFields.address.trim(),
+        notes: appointmentFormFields.notes.trim() || null,
       });
 
       toast.success("Agendamento realizado com sucesso!", {
-        description: `Visita agendada com ${caregiver?.user?.name} para ${format(
-          appointmentData.date,
+        // Usa a data e hora da oferta de serviço para a mensagem
+        description: `Visita agendada com ${serviceOffer.caregiver.user?.name} para ${format(
+          new Date(serviceOffer.availableAt), // <--- Usa availableAt da oferta
           "PPP",
           { locale: ptBR }
-        )} às ${appointmentData.time}.`,
+        )} às ${format(new Date(serviceOffer.availableAt), "HH:mm", { locale: ptBR })}.`, // <--- Usa availableAt
       });
 
       setTimeout(() => {
         navigate("/dashboard");
       }, 2000);
-    } catch (err: any) {
-      console.error("Erro ao criar agendamento:", err);
-      if (err.response?.data?.errors) {
-        const msgs = Object.values(err.response.data.errors).join(" • ");
-        toast.error(msgs);
-      } else if (err.response?.data?.error) {
-        toast.error(err.response.data.error);
-      } else {
-        toast.error("Falha ao criar agendamento. Tente novamente.");
-      }
+    } catch (err: unknown) { // Use 'unknown' para tipagem de erro
+        console.error("Erro ao criar agendamento:", err);
+        if (err instanceof AxiosError && err.response) {
+            if (err.response.data?.errors) {
+                const msgs = Object.values(err.response.data.errors).join(" • ");
+                toast.error(msgs);
+            } else if (err.response.data?.error) {
+                toast.error(err.response.data.error);
+            } else {
+                toast.error("Falha ao criar agendamento. Tente novamente.");
+            }
+        } else {
+            console.error("Erro inesperado ao criar agendamento:", err);
+            toast.error("Ocorreu um erro inesperado. Tente novamente.");
+        }
     }
   };
 
-  return (
+return (
     <div className="h-screen flex flex-col relative">
       <Header />
-
       <main
         className={`flex-1 overflow-y-auto pt-[72px] relative z-0 ${
           isAuthenticated ? "mb-[4rem]" : "mb-[12rem]"
@@ -120,28 +129,28 @@ const ScheduleAppointment = () => {
 
             {isLoading ? (
               <p className="text-lg text-gray-600 mt-2">
-                Carregando informações do cuidador...
+                Carregando informações da oferta de serviço...
               </p>
-            ) : caregiver ? (
-              <p className="text-lg text-gray-600 mt-2">
-                Agende um atendimento com {caregiver.user?.name}
-              </p>
+            ) : serviceOffer && caregiver ? (
+              <>
+              </>
             ) : (
               <p className="text-lg text-red-600 mt-2">
-                Cuidador não encontrado.
+                Oferta de serviço não encontrada ou inválida.
               </p>
             )}
           </div>
 
-          {!isLoading && caregiver && (
+          {!isLoading && serviceOffer && caregiver && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
-                <AppointmentForm caregiver={caregiver} onSubmit={handleAppointmentSubmit} />
+                <AppointmentForm onSubmit={handleAppointmentSubmit} />
               </div>
-
+              {/* Resumo do Cuidador e Serviço */}
               <div>
                 <div className="bg-white rounded-lg shadow p-6 sticky top-6">
-                  <h3 className="text-xl font-semibold mb-4">Resumo do Cuidador</h3>
+                  <h3 className="text-xl font-semibold mb-4">Resumo do Cuidador e Serviço</h3>
+                  {/* ... informações do cuidador, especialidades ... */}
                   <div className="flex items-center mb-4">
                     <img
                       src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=256&q=80"
@@ -158,7 +167,6 @@ const ScheduleAppointment = () => {
                       )}
                     </div>
                   </div>
-
                   <div className="mb-4">
                     <h5 className="font-medium mb-1">Especialidades</h5>
                     <div className="flex flex-wrap gap-1">
@@ -178,13 +186,31 @@ const ScheduleAppointment = () => {
                       )}
                     </div>
                   </div>
-
                   <div className="border-t pt-4">
                     <div className="flex justify-between items-center mb-2">
+                      <span className="text-gray-600">Serviço Ofertado</span>
+                      <span className="font-semibold">{serviceOffer.title}</span>
+                    </div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-gray-600">Data e Hora do Serviço</span>
+                      {/* ADICIONAR VERIFICAÇÃO PARA serviceOffer.availableAt AQUI TAMBÉM */}
+                      {serviceOffer.availableAt ? (
+                          <span className="font-semibold">
+                              {format(new Date(serviceOffer.availableAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                          </span>
+                      ) : (
+                          <span className="text-red-500 font-semibold">Não informada</span>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-gray-600">Local do Serviço</span>
+                      <span className="font-semibold">{serviceOffer.location}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
                       <span className="text-gray-600">Valor por hora</span>
                       <span className="font-semibold">
-                        {hourlyRate !== null
-                          ? `R$ ${hourlyRate.toFixed(2).replace(".", ",")}`
+                        {serviceOffer.hourlyRate !== null
+                          ? `R$ ${serviceOffer.hourlyRate.toFixed(2).replace(".", ",")}`
                           : "—"}
                         <span className="text-sm text-gray-600">/hora</span>
                       </span>
@@ -196,7 +222,6 @@ const ScheduleAppointment = () => {
           )}
         </div>
       </main>
-
       <Footer />
     </div>
   );

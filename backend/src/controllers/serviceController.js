@@ -23,6 +23,9 @@ async function createOffer(req, res) {
       [userId]
     );
 
+    console.log("Dados recebidos no backend para createOffer:", req.body);
+    
+
     if (!caregiverResult.rows[0]) {
       return res
         .status(400)
@@ -32,12 +35,14 @@ async function createOffer(req, res) {
     const caregiverId = caregiverResult.rows[0].id;
 
     // 2. Valida campos obrigatórios no body
-    const { title, description, hourly_rate, location } = req.body;
+    const { title, description, hourly_rate, location, availableAt } = req.body;
     if (
       isEmpty(title) ||
       isEmpty(description) ||
       isEmpty(hourly_rate) ||
+      isEmpty(availableAt) ||
       isEmpty(location)
+
     ) {
       return res.status(400).json({
         error:
@@ -51,8 +56,10 @@ async function createOffer(req, res) {
       description: description.trim(),
       hourly_rate: Number(hourly_rate),
       location: location.trim(),
+      availableAt: availableAt
     };
 
+    console.log("Valor de availableAt recebido no backend:", availableAt);
     // 4. Chama o método de criação, passando caregiverId corretamente
     const newOffer = await Service.createServiceOffer(caregiverId, offerData);
 
@@ -300,85 +307,85 @@ async function getMyOffers(req, res) {
 }
 
 async function getOfferById(req, res) {
-  try {
-    const { id } = req.params;
+    try {
+        const { id } = req.params;
 
-    const result = await db.query(
-      `SELECT
-         so.id,
-         so.title,
-         so.description,
-         so.hourly_rate AS "hourlyRate",
-         so.location,
-         so.active,
-         so.created_at AS "createdAt",
-         
-         -- Campos do caregiver_profiles
-         cp.id AS "caregiverId",
-         cp.user_id AS "caregiverUserId",
-         cp.bio,
-         cp.experience_years AS "experienceYears",
-         cp.certifications,
-         cp.verified AS "caregiverVerified",
-         cp.created_at AS "caregiverCreatedAt",
-         
-         -- Campos do usuário (que pertence ao caregiver_profiles)
-         u.id AS "userId",
-         u.name AS "userName",
-         u.email AS "userEmail",
-         u.phone AS "userPhone",
-         u.tipo AS "userType",
-         u.created_at AS "userCreatedAt"
-       FROM service_offers so
-       JOIN caregiver_profiles cp ON cp.id = so.caregiver_id
-       JOIN users u ON u.id = cp.user_id
-       WHERE so.id = $1
-         AND so.active = true`,
-      [id]
-    );
+        const result = await db.query(
+            `SELECT
+                so.id,
+                so.title,
+                so.description,
+                so.hourly_rate AS "hourlyRate",
+                so.location,
+                so.active,
+                so.created_at AS "createdAt",
+                so.available_at AS "availableAt", -- GARANTIR QUE ESTÁ AQUI
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Oferta não encontrada.' });
+                cp.id AS "caregiverId",
+                cp.user_id AS "caregiverUserId", -- user_id do perfil do cuidador
+                cp.bio,
+                cp.experience_years AS "experienceYears",
+                cp.certifications,
+                cp.verified AS "caregiverVerified",
+                cp.created_at AS "caregiverCreatedAt",
+
+                u.id AS "userId", -- user.id da tabela users, para o objeto user do cuidador
+                u.name AS "userName",
+                u.email AS "userEmail",
+                u.phone AS "userPhone",
+                u.tipo AS "userType", -- O tipo de usuário (caregiver, patient, etc.)
+                u.created_at AS "userCreatedAt"
+            FROM service_offers so
+            JOIN caregiver_profiles cp ON cp.id = so.caregiver_id
+            JOIN users u ON u.id = cp.user_id
+            WHERE so.id = $1
+                AND so.active = true`
+            , [id]
+        );
+
+        const row = result.rows[0]; // Pega o primeiro (e único) resultado
+
+        if (!row) { // Se não encontrou nenhuma linha
+            return res.status(404).json({ error: 'Oferta não encontrada.' });
+        }
+        
+        // **ESTE BLOCO MONTA O OBJETO serviceOffer PARA O FRONTEND**
+        // AQUI ESTÁ A PARTE CRÍTICA QUE ANINHA 'CAREGIVER' E 'USER'
+        const serviceOffer = {
+            id: row.id, // ID da oferta
+            title: row.title,
+            description: row.description,
+            hourlyRate: Number(row.hourlyRate),
+            location: row.location,
+            active: row.active,
+            createdAt: row.createdAt,
+            availableAt: row.availableAt, // availableAt está no nível correto aqui
+            
+            // CONSTRÓI O OBJETO 'CAREGIVER' ANINHADO COMO O FRONTEND ESPERA
+            caregiver: { 
+                id: row.caregiverId,
+                userId: row.caregiverUserId, 
+                bio: row.bio,
+                experienceYears: row.experienceYears,
+                certifications: row.certifications,
+                verified: row.caregiverVerified,
+                createdAt: row.caregiverCreatedAt,
+                user: { // CONSTRÓI O OBJETO 'USER' ANINHADO DENTRO DO CAREGIVER
+                    id: row.userId, 
+                    name: row.userName,
+                    email: row.userEmail,
+                    phone: row.userPhone,
+                    type: row.userType, 
+                    createdAt: row.userCreatedAt,
+                },
+            },
+        };
+
+        return res.json(serviceOffer); // Retorna o objeto UNICO, com 'caregiver' e 'user' aninhados.
+    } catch (err) {
+        console.error('Erro em getOfferById:', err);
+        return res.status(500).json({ error: 'Erro interno do servidor ao buscar oferta.' });
     }
-
-    const row = result.rows[0];
-
-    // Monta o objeto ServiceOffer no formato do frontend
-    const serviceOffer = {
-      id: row.id,
-      caregiverId: row.caregiverId,
-      title: row.title,
-      description: row.description,
-      hourlyRate: Number(row.hourlyRate),
-      location: row.location,
-      active: row.active,
-      createdAt: row.createdAt,
-      caregiver: {
-        id: row.caregiverId,
-        userId: row.userId,
-        bio: row.bio,
-        experienceYears: row.experienceYears,
-        certifications: row.certifications,
-        verified: row.caregiverVerified,
-        createdAt: row.caregiverCreatedAt,
-        user: {
-          id: row.userId,
-          name: row.userName,
-          email: row.userEmail,
-          phone: row.userPhone,
-          type: row.userType,       // UserType no frontend espera 'caregiver', 'patient' ou 'doctor'
-          createdAt: row.userCreatedAt,
-        },
-      },
-    };
-
-    return res.json(serviceOffer);
-  } catch (err) {
-    console.error('Erro em getOfferById:', err);
-    return res
-      .status(500)
-      .json({ error: 'Erro interno do servidor ao buscar oferta.' });
-  }
 }
 
 

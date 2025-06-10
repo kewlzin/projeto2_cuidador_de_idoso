@@ -1,52 +1,42 @@
 // src/components/dashboard/appointment-list.tsx
 
-import React from "react";
 import { Appointment } from "@/types";
-import { AppointmentCard } from "@/components/appointments/appointment-card";
-import { Card, CardContent } from "@/components/ui/card";
+import { AppointmentCard } from "@/components/appointments/appointment-card"; // Importado o card
+import { Dialog, DialogTrigger } from "@/components/ui/dialog"; // Mantenha se você usa esses componentes dentro da lista
 
 interface AppointmentListProps {
   appointments: Appointment[];
+  emptyMessage: string;
   showStatus?: boolean;
-  showPatientName?: boolean;          // adicionada
-  emptyMessage?: string;
+  showPatientName?: boolean; // Passado para o AppointmentCard
   onCancelAppointment?: (appointmentId: number) => void;
 }
 
 export function AppointmentList({
   appointments,
+  emptyMessage,
   showStatus = false,
-  showPatientName = false,           // adicionada
-  emptyMessage = "Nenhum agendamento encontrado.",
+  showPatientName = false, // Garante que a prop seja passada
   onCancelAppointment,
 }: AppointmentListProps) {
-  // Ordena por data (mais recente primeiro)
-  const sortedAppointments = [...appointments].sort((a, b) => {
-    const dateA = new Date(`${a.date}T${a.time}`);
-    const dateB = new Date(`${b.date}T${b.time}`);
-    return dateB.getTime() - dateA.getTime();
-  });
-
   if (appointments.length === 0) {
     return (
-      <Card className="bg-white">
-        <CardContent className="p-6 text-center text-gray-500">
-          {emptyMessage}
-        </CardContent>
-      </Card>
+      <div className="text-center text-gray-500 py-8">
+        <p>{emptyMessage}</p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {sortedAppointments.map((appointment) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+      {appointments.map((appointment) => (
         <AppointmentCard
           key={appointment.id}
           appointment={appointment}
           showStatus={showStatus}
-          showPatientName={showPatientName}          // repassa para o Card
+          showPatientName={showPatientName} // <-- Passando a prop para o card
           onCancel={
-            appointment.status === "agendado" && onCancelAppointment
+            onCancelAppointment
               ? () => onCancelAppointment(appointment.id)
               : undefined
           }
