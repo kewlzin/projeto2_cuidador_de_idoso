@@ -1,0 +1,981 @@
+# openapi.yaml (ou swagger.yaml)
+
+openapi: 3.0.0
+info:
+  title: API de Integração Enfermeiro-Idoso
+  version: 1.0.0
+  description: |
+    Documentação da API para o sistema de agendamento e gestão de cuidados entre enfermeiros/médicos e idosos, com seus responsáveis.
+    Este sistema permite que responsáveis agendem atendimentos com profissionais de saúde e que profissionais cadastrem serviços com horários específicos.
+
+servers:
+  - url: http://localhost:3001/api # URL base da sua API (onde seu backend Express está rodando e suas rotas começam com /api)
+    description: Servidor de Desenvolvimento Local
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT de autenticação.
+        **Para usar:** Adicione `Bearer ` (com um espaço no final) antes do seu token no campo "Value" da autenticação.
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Mensagem de erro.
+          example: "Credenciais inválidas"
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Token JWT para autenticação.
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    User:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - role
+        - created_at
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: ID único do usuário.
+          example: 1
+        name:
+          type: string
+          description: Nome completo do usuário.
+          example: "João da Silva"
+        email:
+          type: string
+          format: email
+          description: Endereço de e-mail do usuário.
+          example: "joao.silva@example.com"
+        phone:
+          type: string
+          description: Número de telefone do usuário.
+          example: "11999999999"
+        birth_date:
+          type: string
+          format: date
+          description: Data de nascimento do usuário (YYYY-MM-DD).
+          example: "1980-05-20"
+        role:
+          type: string
+          enum: [patient, caregiver, doctor] # Valores que o backend retorna
+          description: Tipo de perfil do usuário.
+          example: "caregiver"
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp de criação do usuário.
+          example: "2025-06-01T10:00:00Z"
+    
+    UserProfile: # Um modelo genérico para perfis (cuidador, médico, paciente)
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID do perfil.
+        userId:
+          type: integer
+          description: ID do usuário associado.
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp de criação do perfil.
+
+    CaregiverProfile:
+      allOf:
+        - $ref: '#/components/schemas/UserProfile'
+        - type: object
+          properties:
+            bio:
+              type: string
+              description: Biografia do cuidador.
+              example: "Profissional experiente em cuidados paliativos."
+            experience_years:
+              type: integer
+              description: Anos de experiência.
+              example: 5
+            certifications:
+              type: array
+              items:
+                type: string
+              description: Lista de certificações.
+              example: ["Enfermagem Geriátrica", "Primeiros Socorros"]
+            verified:
+              type: boolean
+              description: Se o perfil foi verificado.
+              example: true
+
+    DoctorProfile:
+      allOf:
+        - $ref: '#/components/schemas/UserProfile'
+        - type: object
+          properties:
+            crm:
+              type: string
+              description: Número do CRM.
+              example: "SP123456"
+            specialty:
+              type: string
+              description: Especialidade médica.
+              example: "Geriatria"
+            institution:
+              type: string
+              description: Instituição de trabalho.
+              example: "Hospital Santa Casa"
+            documents:
+              type: array
+              items:
+                type: string
+              description: Lista de nomes de arquivos de documentos.
+              example: ["crm_doc.pdf", "diploma.jpg"]
+            verified:
+              type: boolean
+              description: Se o perfil foi verificado.
+              example: false
+
+    PatientProfile:
+      allOf:
+        - $ref: '#/components/schemas/UserProfile'
+        - type: object
+          properties:
+            full_name: # No model você tem full_name, mas no users é name. Manter consistência.
+              type: string
+              description: Nome completo do paciente (se diferente do usuário).
+              example: "Ana Clara Silva"
+            age:
+              type: integer
+              description: Idade do paciente.
+              example: 82
+            address:
+              type: string
+              description: Endereço principal do paciente.
+              example: "Av. Paulista, 1000, apto 50, São Paulo, SP"
+            phone:
+              type: string
+              description: Telefone de contato do paciente.
+              example: "11988888888"
+
+    ServiceOffer:
+      type: object
+      required:
+        - id
+        - caregiverId
+        - title
+        - active
+        - createdAt
+        - availableAt
+      properties:
+        id:
+          type: integer
+          description: ID da oferta de serviço.
+          example: 1
+        caregiverId:
+          type: integer
+          description: ID do perfil do cuidador que oferece o serviço.
+          example: 5
+        title:
+          type: string
+          description: Título do serviço oferecido.
+          example: "Acompanhamento Domiciliar Básico"
+        description:
+          type: string
+          nullable: true
+          description: Descrição detalhada do serviço.
+          example: "Auxílio em higiene, alimentação e companhia."
+        hourlyRate:
+          type: number
+          format: float
+          description: Valor por hora do serviço.
+          example: 75.00
+        location:
+          type: string
+          description: Local onde o serviço é oferecido.
+          example: "São Paulo, SP"
+        active:
+          type: boolean
+          description: Indica se a oferta está ativa.
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp de criação da oferta.
+          example: "2025-06-10T10:00:00Z"
+        availableAt:
+          type: string
+          format: date-time
+          description: Data e hora em que o serviço está disponível para agendamento.
+          example: "2025-06-17T14:30:00Z"
+        caregiver: # Detalhes do cuidador aninhados na resposta da oferta (JOIN)
+          $ref: '#/components/schemas/CaregiverProfile' # Reutiliza o schema CaregiverProfile
+
+    ServiceRequest:
+      type: object
+      required:
+        - id
+        - serviceId
+        - patientId
+        - requestDate
+        - status
+      properties:
+        id:
+          type: integer
+          description: ID da requisição de serviço.
+          example: 1
+        serviceId:
+          type: integer
+          description: ID da oferta de serviço solicitada.
+          example: 5
+        patientId:
+          type: integer
+          description: ID do usuário (paciente/responsável) que fez a solicitação.
+          example: 2
+        requestDate:
+          type: string
+          format: date-time
+          description: Data e hora da solicitação.
+          example: "2025-06-10T11:00:00Z"
+        status:
+          type: string
+          enum: [pendente, aceito, recusado, concluido]
+          description: Status da solicitação.
+          example: "pendente"
+        service: # Detalhes da oferta de serviço aninhados (se o backend retornar)
+          $ref: '#/components/schemas/ServiceOffer'
+        senior: # Detalhes do usuário paciente/responsável aninhados
+          $ref: '#/components/schemas/User'
+
+    Appointment:
+      type: object
+      required:
+        - id
+        - caregiverId
+        - patientId
+        - patientName
+        - patientAge
+        - address
+        - date
+        - time
+        - status
+      properties:
+        id:
+          type: integer
+          description: ID do agendamento.
+          example: 1
+        caregiverId:
+          type: integer
+          description: ID do perfil do cuidador do agendamento.
+          example: 1
+        patientId:
+          type: integer
+          description: ID do usuário (paciente/responsável) que agendou.
+          example: 2
+        patientName:
+          type: string
+          description: Nome do paciente/idoso a ser atendido.
+          example: "Antônio Carlos"
+        patientAge:
+          type: integer
+          description: Idade do paciente/idoso.
+          example: 85
+        address:
+          type: string
+          description: Endereço completo do atendimento.
+          example: "Rua Exemplo, 456, Bairro Novo, Curitiba - PR"
+        date:
+          type: string
+          format: date
+          description: Data do agendamento (YYYY-MM-DD), extraída de serviceOffer.availableAt.
+          example: "2025-06-17"
+        time:
+          type: string
+          description: Hora do agendamento (HH:mm), extraída de serviceOffer.availableAt.
+          example: "10:45"
+        status:
+          type: string
+          enum: [agendado, concluido, cancelado]
+          description: Status do agendamento.
+          example: "agendado"
+        notes:
+          type: string
+          nullable: true
+          description: Observações sobre o agendamento.
+          example: "Paciente precisa de auxílio para locomoção."
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp de criação do agendamento.
+          example: "2025-06-10T12:30:00Z"
+        serviceOfferId:
+          type: integer
+          nullable: true
+          description: ID da oferta de serviço original que gerou este agendamento.
+          example: 5
+        serviceTitle: # Campos da ServiceOffer aninhados, retornados em listagens
+          type: string
+          description: Título do serviço agendado.
+          example: "Acompanhamento Domiciliar Básico"
+        serviceDescription:
+          type: string
+          description: Descrição do serviço agendado.
+        serviceHourlyRate:
+          type: number
+          format: float
+          description: Valor por hora do serviço agendado.
+        serviceLocation:
+          type: string
+          description: Local do serviço agendado.
+        serviceAvailableAt:
+          type: string
+          format: date-time
+          description: Data e hora original de disponibilidade da oferta de serviço.
+        caregiver: # Detalhes do cuidador aninhados na resposta
+          $ref: '#/components/schemas/CaregiverProfile'
+        senior: # Detalhes do usuário paciente/responsável aninhados
+          $ref: '#/components/schemas/User'
+
+paths:
+  /users/register:
+    post:
+      summary: Registra um novo usuário e seu perfil associado.
+      tags: [Usuários]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - full_name
+                - email
+                - password
+                - role
+              properties:
+                full_name:
+                  type: string
+                  description: Nome completo do usuário.
+                  example: "Novo Usuário Teste"
+                email:
+                  type: string
+                  format: email
+                  description: E-mail para login.
+                  example: "novo.usuario@example.com"
+                password:
+                  type: string
+                  format: password
+                  description: Senha do usuário.
+                  example: "SenhaSegura123"
+                role:
+                  type: string
+                  enum: [patient, caregiver, doctor]
+                  description: Tipo de perfil a ser criado junto com o usuário.
+                  example: "patient"
+                phone:
+                  type: string
+                  nullable: true
+                  description: Número de telefone do usuário.
+                  example: "11987654321"
+                birth_date:
+                  type: string
+                  format: date
+                  nullable: true
+                  description: Data de nascimento do usuário (YYYY-MM-DD).
+                  example: "1990-01-01"
+                # Campos adicionais para profiles específicos, dependendo do 'role'
+                # Para 'patient' (idoso):
+                age:
+                  type: integer
+                  description: Idade do paciente (apenas para role 'patient').
+                  example: 75
+                address:
+                  type: string
+                  description: Endereço do paciente (apenas para role 'patient').
+                  example: "Rua A, 123"
+                # Para 'caregiver':
+                bio:
+                  type: string
+                  description: Biografia do cuidador (apenas para role 'caregiver').
+                  example: "Experiência em cuidados com idosos."
+                experience_years:
+                  type: integer
+                  description: Anos de experiência (apenas para role 'caregiver').
+                  example: 5
+                certifications:
+                  type: array
+                  items:
+                    type: string
+                  description: Lista de certificações (apenas para role 'caregiver').
+                  example: ["Primeiros Socorros", "BLS"]
+                # Para 'doctor':
+                crm:
+                  type: string
+                  description: Número do CRM (apenas para role 'doctor').
+                  example: "SP123456"
+                specialty:
+                  type: string
+                  description: Especialidade médica (apenas para role 'doctor').
+                  example: "Geriatria"
+                institution:
+                  type: string
+                  description: Instituição de trabalho (apenas para role 'doctor').
+                  example: "Hospital Municipal"
+                documents:
+                  type: array
+                  items:
+                    type: string # Nomes dos arquivos, pois o upload é via multer
+                  description: Documentos do médico (apenas para role 'doctor'), como nomes de arquivos.
+                  example: ["crm_doc.pdf", "diploma.png"]
+      responses:
+        201:
+          description: Usuário registrado e perfil criado com sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Usuário registrado com sucesso"
+                  user:
+                    $ref: '#/components/schemas/User'
+        400:
+          description: Requisição inválida (campos faltando, tipo de usuário inválido, etc.).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/login:
+    post:
+      summary: Realiza o login de um usuário e retorna um token JWT.
+      tags: [Usuários]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: E-mail do usuário.
+                  example: "joao.silva@example.com"
+                password:
+                  type: string
+                  format: password
+                  description: Senha do usuário.
+                  example: "minhasenha123"
+      responses:
+        200:
+          description: Login bem-sucedido, retorna o token JWT.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        401:
+          description: Credenciais inválidas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/me:
+    get:
+      summary: Obtém os dados do usuário logado (token JWT necessário).
+      tags: [Usuários]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Dados do usuário logado e seu perfil associado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  email:
+                    type: string
+                  phone:
+                    type: string
+                  role:
+                    type: string
+                    enum: [patient, caregiver, doctor]
+                  created_at:
+                    type: string
+                    format: date-time
+                  profile: # Pode ser CaregiverProfile, DoctorProfile ou null
+                    oneOf:
+                      - $ref: '#/components/schemas/CaregiverProfile'
+                      - $ref: '#/components/schemas/DoctorProfile'
+                      - type: array
+                example:
+                  id: 1
+                  name: "Teste Cuidador"
+                  email: "cuidador@example.com"
+                  phone: "9912345678"
+                  role: "caregiver"
+                  created_at: "2025-06-01T10:00:00Z"
+                  profile:
+                    id: 1
+                    userId: 1
+                    bio: "Experiente em cuidados paliativos."
+                    experience_years: 10
+                    certifications: ["BLS"]
+                    verified: true
+                    created_at: "2025-06-01T10:00:00Z"
+        401:
+          description: Não autorizado (token não fornecido).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Token inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Usuário não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /services/offer:
+    post:
+      summary: Cadastra uma nova oferta de serviço por um cuidador/enfermeiro.
+      tags: [Serviços]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+                - hourly_rate
+                - location
+                - availableAt
+              properties:
+                title:
+                  type: string
+                  description: Título do serviço oferecido.
+                  example: "Acompanhamento e Cuidados Domiciliares"
+                description:
+                  type: string
+                  description: Descrição detalhada do serviço.
+                  example: "Serviços de enfermagem, auxílio em higiene, medicação e alimentação para idosos."
+                hourly_rate:
+                  type: number
+                  format: float
+                  description: Valor por hora do serviço.
+                  example: 85.50
+                location:
+                  type: string
+                  description: Localização onde o serviço é oferecido.
+                  example: "Curitiba, PR"
+                availableAt:
+                  type: string
+                  format: date-time
+                  description: Data e hora em que o serviço estará disponível (formato ISO 8601).
+                  example: "2025-07-15T10:00:00Z"
+      responses:
+        201:
+          description: Oferta de serviço criada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceOffer'
+        400:
+          description: Dados incompletos ou perfil de cuidador não encontrado para o usuário logado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Não autorizado (token ausente ou inválido).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /services/offers:
+    get:
+      summary: Lista todas as ofertas de serviço ativas.
+      tags: [Serviços]
+      security:
+        - BearerAuth: []
+      parameters: [] # Não há parâmetros específicos para esta rota GET
+      responses:
+        200:
+          description: Lista de ofertas de serviço.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceOffer'
+        401:
+          description: Não autorizado (token ausente ou inválido).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /services/offers/{id}:
+    get:
+      summary: Retorna os detalhes de uma oferta de serviço específica.
+      tags: [Serviços]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID da oferta de serviço.
+          example: 5
+      responses:
+        200:
+          description: Detalhes da oferta de serviço.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceOffer'
+        401:
+          description: Não autorizado (token ausente ou inválido).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Oferta de serviço não encontrada ou inativa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /services/request:
+    post:
+      summary: Paciente/responsável solicita um serviço (o que gera um agendamento direto).
+      tags: [Serviços]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - service_id
+                - patientName
+                - patientAge
+                - address
+              properties:
+                service_id:
+                  type: integer
+                  description: ID da oferta de serviço a ser solicitada/agendada.
+                  example: 5
+                patientName:
+                  type: string
+                  description: Nome do paciente/idoso para o atendimento.
+                  example: "Dona Laura Mendes"
+                patientAge:
+                  type: integer
+                  description: Idade do paciente/idoso.
+                  example: 70
+                address:
+                  type: string
+                  description: Endereço completo onde o atendimento será realizado.
+                  example: "Rua Nova, 45, Apartamento 3, Centro, Curitiba - PR"
+                notes:
+                  type: string
+                  nullable: true
+                  description: Observações adicionais para o atendimento.
+                  example: "Paciente com alergia a amendoim."
+      responses:
+        201:
+          description: Solicitação de serviço realizada (e agendamento criado) com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment' # Retorna o agendamento criado
+        400:
+          description: Dados incompletos, oferta expirada, solicitação duplicada ou auto-solicitação.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Não autorizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Apenas usuários tipo 'patient'/'idoso' podem solicitar serviços.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Oferta de serviço não encontrada ou inativa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /appointments:
+    post:
+      summary: Cria um novo agendamento por um responsável/paciente.
+      tags: [Agendamentos]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - serviceOfferId
+                - patientName
+                - patientAge
+                - address
+              properties:
+                serviceOfferId:
+                  type: integer
+                  description: ID da oferta de serviço a ser agendada.
+                  example: 5
+                patientName:
+                  type: string
+                  description: Nome completo do paciente/idoso que receberá o atendimento.
+                  example: "Dona Maria Aparecida"
+                patientAge:
+                  type: integer
+                  description: Idade do paciente/idoso.
+                  example: 80
+                address:
+                  type: string
+                  description: Endereço completo onde o atendimento será realizado.
+                  example: "Av. do Contorno, 500, Apto 201, Funcionários, Belo Horizonte - MG"
+                notes:
+                  type: string
+                  nullable: true
+                  description: Observações adicionais sobre o atendimento.
+                  example: "Paciente em recuperação de cirurgia no joelho."
+      responses:
+        201:
+          description: Agendamento criado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+        400:
+          description: Dados incompletos, oferta expirada ou agendamento duplicado para o mesmo horário/serviço.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Não autorizado (token ausente ou inválido).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Oferta de serviço não encontrada ou inativa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /appointments/patient:
+    get:
+      summary: Lista os agendamentos de um paciente/responsável logado.
+      tags: [Agendamentos]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Lista de agendamentos do paciente, incluindo detalhes do cuidador e do serviço.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Appointment'
+        401:
+          description: Não autorizado (token ausente ou inválido).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /appointments/caregiver:
+    get:
+      summary: Lista os agendamentos de um cuidador logado.
+      tags: [Agendamentos]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Lista de agendamentos do cuidador, incluindo detalhes do paciente e do serviço.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Appointment'
+        401:
+          description: Não autorizado (token ausente ou inválido).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Perfil de cuidador não encontrado para o usuário logado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /appointments/{id}/cancel:
+    patch:
+      summary: Cancela um agendamento específico.
+      tags: [Agendamentos]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID do agendamento a ser cancelado.
+          example: 1
+      responses:
+        200:
+          description: Agendamento cancelado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment' # Retorna o agendamento atualizado
+        400:
+          description: Agendamento já está cancelado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Não autorizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Você não tem permissão para cancelar este agendamento.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Agendamento não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
